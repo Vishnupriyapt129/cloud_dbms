@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudHub Dashboard</title>
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- TOP NAV -->
+        <nav class="top-nav">
+            <div class="logo">
+                <i class="fa-solid fa-cloud"></i> CloudHub
+            </div>
+            <div class="search-bar">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search files..." oninput="handleSearch(event)">
+            </div>
+            <div class="nav-actions">
+                <button class="btn btn-glass" onclick="alert('Upgrade to CloudHub Premium to unlock 1TB of extra storage!')">Upgrade</button>
+                <div class="notification" onclick="alert('You have 3 unread system messages!')">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-profile" onclick="triggerLogout()">
+                    <div class="avatar" id="nav-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <span id="nav-username">Loading...</span>
+                    <i class="fa-solid fa-chevron-down text-sm"></i>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <!-- PAGE HEADER -->
+            <header class="header">
+                <div class="welcome-text">
+                    <h1 id="welcome-message">Welcome!</h1>
+                    <p>Your Cloud Storage Dashboard</p>
+                </div>
+                <div class="header-actions">
+                    <input type="file" id="file-upload-input" style="display: none;" onchange="handleFileUpload(event)">
+                    <button class="btn btn-primary" onclick="document.getElementById('file-upload-input').click()">
+                        Upload File <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-white" onclick="handleNewFolder()">
+                        <i class="fa-solid fa-folder-plus"></i> New Folder
+                    </button>
+                </div>
+            </header>
+
+            <div class="grid-container">
+                <!-- LEFT COLUMN -->
+                <div class="left-col">
+
+                    <!-- FOLDERS -->
+                    <section class="glass-panel folder-section">
+                        <div class="breadcrumbs">
+                            <i class="fa-solid fa-house"></i> Work Files <span class="divider">|</span> Project A <i
+                                class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div class="folder-list" id="folder-list">
+                            <!-- Folders injected via JS -->
+                        </div>
+                    </section>
+
+                    <!-- FILE MANAGER -->
+                    <section class="card file-manager">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fa-solid fa-folder"></i> File Manager
+                            </div>
+                            <div class="card-tools">
+                                <button class="icon-btn active"><i class="fa-solid fa-list"></i></button>
+                                <button class="icon-btn"><i class="fa-solid fa-grid-2"></i></button>
+                                <button class="icon-btn"><i class="fa-solid fa-gear"></i></button>
+                                <button class="icon-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="file-table">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                        <th>Date Modified</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="file-list">
+                                    <!-- Files injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- STORAGE BAR -->
+                        <div class="storage-section">
+                            <div class="storage-text" id="storage-text">Storage Used: Loading...</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="storage-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="right-col">
+
+                    <!-- ACCESS CONTROL -->
+                    <section class="glass-panel access-control">
+                        <div class="panel-header">
+                            <h3>Access Control</h3>
+                            <i class="fa-solid fa-arrows-to-dot"></i>
+                        </div>
+                        <div class="panel-body card-inner">
+                            <div class="access-title">Manage Access: <span id="access-filename">...</span></div>
+                            <div class="user-list" id="access-list">
+                                <!-- Users injected via JS -->
+                            </div>
+                            <button class="btn btn-primary btn-full mt-3" onclick="handleAddUser()">
+                                <i class="fa-solid fa-user-plus"></i> Add User
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- ACTIVITY LOG -->
+                    <section class="glass-panel activity-log">
+                        <div class="panel-header">
+                            <h3>Activity Log</h3>
+                        </div>
+                        <div class="panel-body card-inner">
+                            <ul class="activity-list" id="activity-list">
+                                <!-- Activities injected via JS -->
+                            </ul>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Frontend logic (Dynamically injected to completely bypass browser caching bugs) -->
+    <script>
+        const scriptDef = document.createElement('script');
+        scriptDef.src = 'app.js?v=' + Date.now();
+        document.body.appendChild(scriptDef);
+    </script>
+    <!-- Custom UI Modal System -->
+    <div class="custom-modal-overlay" id="custom-modal">
+        <div class="custom-modal-card">
+            <h3 id="modal-title">Prompt</h3>
+            <p id="modal-desc">Description goes here</p>
+            <input type="text" id="modal-input" style="display: none;" placeholder="Type here...">
+            <div class="modal-actions">
+                <button class="btn btn-white" id="modal-cancel">Cancel</button>
+                <button class="btn btn-primary" id="modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
