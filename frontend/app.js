@@ -1,32 +1,52 @@
 // Dynamically mounts to ANY custom domain name seamlessly!
 const API_BASE = window.location.origin + '/api';
+
+function getActiveUid() {
+    return localStorage.getItem('cloudhub_uid') || '1';
+}
+
+async function authFetch(url, options = {}) {
+    const headers = { ...options.headers, 'Authorization': getActiveUid() };
+    return fetch(url, { ...options, headers });
+}
+
 let currentFolderId = '1';
 let currentFileId = '1';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Prioritize URL parameter to bypass any strict local file security
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlRole = urlParams.get('role');
-    if (urlRole) {
-        localStorage.setItem('cloudhub_role', urlRole);
-    }
-    
     const role = localStorage.getItem('cloudhub_role');
     if (!role) {
         window.location.href = 'login.html';
         return;
     }
-    
-    // Visually toggle UI states based on active role
     document.body.classList.add(`role-${role}`);
-    
+
     fetchUserData();
     fetchFolders();
     fetchFiles();
     fetchAccessControl();
     fetchActivityLogs();
+    fetchAdminRequests();
     setupTabs();
+    setupProfileDropdown();
 });
+
+function setupProfileDropdown() {
+    const profileBtn = document.getElementById('profile-dropdown-btn');
+    const dropdownMenu = document.getElementById('profile-dropdown-menu');
+    if (profileBtn && dropdownMenu) {
+        profileBtn.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown-item')) {
+                dropdownMenu.classList.toggle('active');
+            }
+        });
+        document.addEventListener('click', (e) => {
+            if (!profileBtn.contains(e.target)) {
+                dropdownMenu.classList.remove('active');
+            }
+        });
+    }
+}
 
 function setupTabs() {
     // Make the File Manager layout icons act like tabs
@@ -71,13 +91,19 @@ function getActivityIcon(iconType) {
 
 async function fetchUserData() {
     try {
-        const res = await fetch(`${API_BASE}/user?t=${Date.now()}`);
+        const res = await authFetch(`${API_BASE}/user?t=${Date.now()}`);
         const result = await res.json();
 
         if (result.status === 'success') {
             const user = result.data;
             document.getElementById('nav-username').textContent = user.name;
             document.getElementById('welcome-message').textContent = `Welcome, ${user.name}!`;
+
+            // Dropdown menu updates
+            const dropdownName = document.getElementById('dropdown-name');
+            const dropdownEmail = document.getElementById('dropdown-email');
+            if(dropdownName) dropdownName.textContent = user.name;
+            if(dropdownEmail) dropdownEmail.textContent = user.email || '';
 
             // Storage updates
             document.getElementById('storage-text').textContent = `Storage Used: ${user.storage.used_gb} GB of ${user.storage.total_gb} GB`;
@@ -95,7 +121,7 @@ async function fetchUserData() {
 
 async function fetchFolders() {
     try {
-        const res = await fetch(`${API_BASE}/folders?t=${Date.now()}`);
+        const res = await authFetch(`${API_BASE}/folders?t=${Date.now()}`);
         const result = await res.json();
 
         if (result.status === 'success') {
@@ -139,7 +165,7 @@ async function fetchFolders() {
 async function fetchFiles(folderId = currentFolderId) {
     currentFolderId = folderId;
     try {
-        const res = await fetch(`${API_BASE}/files?folder_id=${folderId}`);
+        const res = await authFetch(`${API_BASE}/files?folder_id=${folderId}`);
         const result = await res.json();
 
         if (result.status === 'success') {
@@ -189,7 +215,7 @@ async function fetchFiles(folderId = currentFolderId) {
 
 async function fetchAccessControl(fileId = currentFileId) {
     try {
-        const res = await fetch(`${API_BASE}/access-control/${fileId}?t=${Date.now()}`);
+        const res = await authFetch(`${API_BASE}/access-control/${fileId}?t=${Date.now()}`);
         const result = await res.json();
 
         if (result.status === 'success') {
@@ -228,7 +254,7 @@ async function fetchAccessControl(fileId = currentFileId) {
 
 async function fetchActivityLogs() {
     try {
-        const res = await fetch(`${API_BASE}/activity?t=${Date.now()}`);
+        const res = await authFetch(`${API_BASE}/activity?t=${Date.now()}`);
         const result = await res.json();
 
         if (result.status === 'success') {
@@ -261,6 +287,181 @@ async function fetchActivityLogs() {
     }
 }
 
+async function fetchAdminRequests() {
+    const role = localStorage.getItem('cloudhub_role');
+    const panel = document.getElementById('admin-requests-panel');
+    if (role !== 'admin') {
+        if (panel) panel.style.display = 'none';
+        return;
+    }
+    panel.style.display = 'block';
+
+    try {
+        const res = await authFetch(`${API_BASE}/admin/requests?t=${Date.now()}`);
+        const result = await res.json();
+
+        if (result.status === 'success') {
+            const requests = result.data;
+            const container = document.getElementById('requests-list');
+            const badge = document.getElementById('requests-badge');
+            badge.textContent = requests.length;
+            container.innerHTML = '';
+
+            if (requests.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:24px 16px;opacity:0.65;">
+                        <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                        All caught up — no pending requests.
+                    </div>`;
+                return;
+            }
+
+            requests.forEach(req => {
+                /* ---- Criteria evaluation logic ---- */
+                const rolePassed   = req.user_role === 'user';
+                const loginsPassed = req.recent_logins <= 5;
+                const loginsFailed = !loginsPassed;
+                const reasonPassed = req.reason && req.reason.length >= 15;
+                const countPassed  = req.number_of_requests <= 3;        // not spamming
+                const countWarned  = req.number_of_requests > 3;
+
+                const chip = (ok, warn, label, detail) => {
+                    const color = ok && !warn
+                        ? 'rgba(46,204,113,0.18)'   // green
+                        : warn
+                            ? 'rgba(243,156,18,0.2)'  // orange
+                            : 'rgba(231,76,60,0.2)';  // red
+                    const border = ok && !warn
+                        ? 'rgba(46,204,113,0.55)'
+                        : warn
+                            ? 'rgba(243,156,18,0.55)'
+                            : 'rgba(231,76,60,0.55)';
+                    const icon = ok && !warn ? 'fa-check-circle' : warn ? 'fa-triangle-exclamation' : 'fa-times-circle';
+                    const iconColor = ok && !warn ? '#2ecc71' : warn ? '#f39c12' : '#e74c3c';
+                    return `
+                        <div style="background:${color};border:1px solid ${border};border-radius:8px;padding:8px 10px;font-size:0.78rem;">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                                <i class="fa-solid ${icon}" style="color:${iconColor};"></i>
+                                <span style="font-weight:600;">${label}</span>
+                            </div>
+                            <div style="opacity:0.8;padding-left:20px;">${detail}</div>
+                        </div>`;
+                };
+
+                const roleChip   = chip(rolePassed,  false,     'User Role',         rolePassed ? 'Regular user ✓' : 'Unknown role');
+                const loginsChip = chip(loginsPassed, false,    'Recent Logins',     loginsPassed ? `${req.recent_logins} in 24h ✓` : `${req.recent_logins} in 24h (>5 limit)`);
+                const reasonChip = chip(reasonPassed, false,    'Request Reason',    reasonPassed ? 'Reason provided ✓' : 'Reason too short!');
+                const countChip  = chip(!countWarned, countWarned, 'Request Count',  `${req.number_of_requests} total request(s)`);
+
+                /* ---- Overall recommendation ---- */
+                const allGood = rolePassed && loginsPassed && reasonPassed && !countWarned;
+                const recoBg     = allGood ? 'rgba(46,204,113,0.12)' : 'rgba(243,156,18,0.12)';
+                const recoBorder = allGood ? 'rgba(46,204,113,0.4)'  : 'rgba(243,156,18,0.4)';
+                const recoIcon   = allGood ? '✅' : '⚠️';
+                const recoText   = allGood ? 'Criteria met — recommended to <strong>Accept</strong>' : 'Some criteria flagged — review carefully';
+
+                const div = document.createElement('div');
+                div.className = 'request-item';
+                div.style.cssText = 'margin-bottom:18px;padding:16px;background:rgba(255,255,255,0.05);border-radius:14px;border:1px solid var(--glass-border);';
+
+                div.innerHTML = `
+                    <!-- Header row -->
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div style="width:34px;height:34px;border-radius:50%;background:rgba(101,173,136,0.3);border:2px solid rgba(101,173,136,0.5);display:flex;align-items:center;justify-content:center;">
+                                    <i class="fa-solid fa-user" style="font-size:0.9rem;color:#bde0d0;"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size:1rem;">${req.user_name}</strong>
+                                    <span style="margin-left:6px;font-size:0.78rem;opacity:0.65;background:rgba(255,255,255,0.1);padding:2px 7px;border-radius:20px;">${req.user_role}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span style="font-size:0.76rem;background:rgba(0,0,0,0.25);padding:3px 9px;border-radius:12px;white-space:nowrap;">${req.date_requested}</span>
+                    </div>
+
+                    <!-- Request type + reason -->
+                    <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+                        <div style="font-weight:600;font-size:0.9rem;color:#65ad88;margin-bottom:4px;">
+                            <i class="fa-solid fa-tag" style="margin-right:6px;"></i>${req.request_type}
+                        </div>
+                        <div style="font-size:0.83rem;opacity:0.82;font-style:italic;">"${req.reason}"</div>
+                    </div>
+
+                    <!-- Criteria grid -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                        ${roleChip}${loginsChip}${reasonChip}${countChip}
+                    </div>
+
+                    <!-- Recommendation banner -->
+                    <div style="background:${recoBg};border:1px solid ${recoBorder};border-radius:8px;padding:8px 12px;font-size:0.82rem;margin-bottom:12px;">
+                        ${recoIcon} ${recoText}
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div style="display:flex;gap:12px;">
+                        <button id="approve-btn-${req.id}" class="btn btn-accept" ${!allGood ? 'disabled' : ''} onclick="handleRequestAction('${req.id}', 'approve')" style="flex:1;">
+                            <i class="fa-solid ${allGood ? 'fa-check' : 'fa-lock'}"></i> Accept
+                        </button>
+                        <button id="reject-btn-${req.id}" class="btn btn-reject" onclick="handleRequestAction('${req.id}', 'reject')" style="flex:1;">
+                            <i class="fa-solid fa-xmark"></i> Reject
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        document.getElementById('requests-list').innerHTML = '<div style="opacity:0.65;text-align:center;padding:16px;">Failed to load requests. Is Flask running?</div>';
+    }
+}
+
+async function handleRequestAction(reqId, action) {
+    const label = action === 'approve' ? 'accept' : 'reject';
+    showModal({
+        title: action === 'approve' ? 'Accept Request' : 'Reject Request',
+        desc: `Are you sure you want to ${label} this access request? This action will be logged.`,
+        showInput: false,
+        onConfirm: async () => {
+            const approveBtn = document.getElementById(`approve-btn-${reqId}`);
+            const rejectBtn  = document.getElementById(`reject-btn-${reqId}`);
+            if (approveBtn) approveBtn.disabled = true;
+            if (rejectBtn)  rejectBtn.disabled  = true;
+
+            try {
+                const res = await authFetch(`${API_BASE}/admin/requests/${reqId}/${action}`, { method: 'POST' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    fetchAdminRequests();
+                    fetchActivityLogs();
+                    showModal({
+                        title: action === 'approve' ? 'Request Accepted' : 'Request Rejected',
+                        desc: action === 'approve'
+                            ? 'The user has been approved and can now access the dashboard.'
+                            : 'The request has been rejected and logged.',
+                        showInput: false,
+                        onConfirm: () => {}
+                    });
+                } else {
+                    showModal({ title: 'Error', desc: 'Action failed: ' + result.message, showInput: false, onConfirm: () => {} });
+                }
+            } catch (e) {
+                console.error('Request action failed', e);
+                if (approveBtn) approveBtn.disabled = false;
+                if (rejectBtn)  rejectBtn.disabled  = false;
+                showModal({
+                    title: 'Network Error',
+                    desc: 'Backend server is unreachable. Please make sure Flask is running.',
+                    showInput: false,
+                    onConfirm: () => {}
+                });
+            }
+        }
+    });
+}
+
 async function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -270,7 +471,7 @@ async function handleFileUpload(event) {
     formData.append('folder_id', currentFolderId);
 
     try {
-        const res = await fetch(`${API_BASE}/files/upload`, {
+        const res = await authFetch(`${API_BASE}/files/upload`, {
             method: 'POST',
             body: formData
         });
@@ -278,7 +479,7 @@ async function handleFileUpload(event) {
         if (result.status === 'success') {
             fetchFiles(); 
             fetchActivityLogs();
-            alert('File uploaded successfully!');
+            showModal({ title: "Upload Success", desc: "File uploaded successfully!", showInput: false, onConfirm: () => {} });
         }
     } catch (e) {
         console.error("Upload failed", e);
@@ -293,7 +494,7 @@ function handleAddUser() {
         onConfirm: async (name) => {
             if (!name) return;
             try {
-                const res = await fetch(`${API_BASE}/access-control/${currentFileId}/users`, {
+                const res = await authFetch(`${API_BASE}/access-control/${currentFileId}/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: name, role: 'Editor' })
@@ -302,15 +503,15 @@ function handleAddUser() {
                 if (result.status === 'success') {
                     await fetchAccessControl(); 
                     fetchActivityLogs();
-                    alert("Database successfully updated! " + name + " has been granted access.");
+                    showModal({ title: "Database Updated", desc: name + " has been successfully granted access privileges.", showInput: false, onConfirm: () => {} });
                 } else {
-                    alert('Registration lookup failed: ' + result.message);
+                    showModal({ title: "Registration Error", desc: "Registration lookup failed: " + result.message, showInput: false, onConfirm: () => {} });
                 }
             } catch (e) {
                 if (e.message.includes('NetworkError') || e.message.includes('Failed to fetch') || e.name === 'TypeError') {
-                    alert("SERVER IS OFFLINE: Your browser cannot communicate with Flask! Please open your terminal, type 'python app.py', and leave that terminal running completely uninterrupted in the background!");
+                    showModal({ title: "Network Disconnected", desc: "SERVER IS OFFLINE: Your browser cannot communicate with Flask! Please run 'python app.py' in your backend terminal.", showInput: false, onConfirm: () => {} });
                 } else {
-                    alert("Critical backend crash: " + e.message);
+                    showModal({ title: "Backend Crash", desc: "Critical execution failure: " + e.message, showInput: false, onConfirm: () => {} });
                 }
             }
         }
@@ -325,7 +526,7 @@ function handleNewFolder() {
         onConfirm: async (folderName) => {
             if (!folderName) return;
             try {
-                const res = await fetch(`${API_BASE}/folders`, {
+                const res = await authFetch(`${API_BASE}/folders`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: folderName })
@@ -349,7 +550,7 @@ function handleRemoveUser(userId) {
         showInput: false,
         onConfirm: async () => {
             try {
-                const res = await fetch(`${API_BASE}/access-control/${currentFileId}/users/${userId}`, { method: 'DELETE' });
+                const res = await authFetch(`${API_BASE}/access-control/${currentFileId}/users/${userId}`, { method: 'DELETE' });
                 const result = await res.json();
                 if(result.status === 'success') {
                     fetchAccessControl();

@@ -1,10 +1,10 @@
 :root {
-    --purple-light: #d1b3ff;
-    --purple-main: #9d50bb;
-    --purple-dark: #6e48aa;
+    --purple-light: #bde0d0;
+    --purple-main: #65ad88;
+    --purple-dark: #37825d;
     --text-light: #ffffff;
-    --text-dark: #333333;
-    --text-muted: #757575;
+    --text-dark: #1f2e26;
+    --text-muted: #5b7266;
 
     --glass-bg-light: rgba(255, 255, 255, 0.2);
     --glass-bg-dark: rgba(0, 0, 0, 0.1);
@@ -58,7 +58,7 @@ body::before {
 }
 
 body::after {
-    background: rgba(110, 72, 170, 0.5);
+    background: rgba(101, 173, 136, 0.5);
     bottom: -150px;
     right: -150px;
     animation-delay: -12s;
@@ -177,7 +177,7 @@ body::after {
 .btn-primary:hover {
     background: var(--purple-main);
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(110, 72, 170, 0.4);
+    box-shadow: 0 4px 15px rgba(55, 130, 93, 0.4);
 }
 
 .btn-white {
@@ -217,6 +217,76 @@ body::after {
     align-items: center;
     gap: 12px;
     cursor: pointer;
+    position: relative;
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 20px;
+    background: var(--card-bg);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    min-width: 220px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: var(--transition);
+    z-index: 100;
+}
+
+.profile-dropdown-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.profile-dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 30px;
+    width: 12px;
+    height: 12px;
+    background: var(--card-bg);
+    transform: rotate(45deg);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-header {
+    padding: 16px 20px;
+}
+
+.dropdown-header strong {
+    color: var(--text-dark);
+    display: block;
+    font-size: 1.05rem;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    color: #e74c3c;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: var(--transition);
+    border-bottom-left-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+}
+
+.dropdown-item:hover {
+    background: rgba(231, 76, 60, 0.05);
 }
 
 .avatar {
@@ -266,8 +336,13 @@ body::after {
 /* Layout */
 .grid-container {
     display: grid;
-    grid-template-columns: 2.2fr 1fr;
+    grid-template-columns: minmax(0, 2.2fr) minmax(300px, 1fr);
     gap: 30px;
+}
+
+/* Structurally prevent CSS Grid Blowout securely locally cleanly natively! */
+.grid-container > div {
+    min-width: 0;
 }
 
 .glass-panel {
@@ -418,7 +493,7 @@ body::after {
 }
 
 .file-table tbody tr:hover {
-    background: rgba(157, 80, 187, 0.05);
+    background: rgba(101, 173, 136, 0.05);
 }
 
 .file-name-cell {
@@ -690,9 +765,7 @@ body::after {
 }
 
 /* User Role Restrictions */
-body.role-user .header-actions,
-body.role-user .access-control,
-body.role-user .file-actions {
+body.role-user .access-control {
     display: none !important;
 }
 
@@ -780,4 +853,99 @@ body.role-user .activity-log {
 
 .modal-actions .btn {
     padding: 12px 25px;
+}
+
+.btn-accept:not(:disabled) {
+    background: linear-gradient(135deg, #00b09b, #96c93d) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(0, 176, 155, 0.3);
+}
+
+.btn-reject:not(:disabled) {
+    background: linear-gradient(135deg, #ff416c, #ff4b2b) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+}
+
+.btn-accept:disabled, .btn-reject:disabled {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    opacity: 0.6;
+    cursor: default;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn-accept:not(:disabled):hover, .btn-reject:not(:disabled):hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+/* ========================================================================= */
+/*                   ADMIN DASHBOARD EXCLUSIVE LAYOUT                        */
+/* ========================================================================= */
+
+body.role-admin .left-col {
+    display: none !important;
+}
+
+body.role-admin .header-actions {
+    display: none !important;
+}
+
+body.role-admin .access-control {
+    display: none !important;
+}
+
+body.role-admin .search-bar {
+    visibility: hidden;
+}
+
+body.role-admin .grid-container {
+    grid-template-columns: 1fr !important;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+body.role-admin .right-col {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+body.role-admin .admin-requests, 
+body.role-admin .activity-log {
+    margin-bottom: 0 !important;
+    min-height: 500px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+body.role-admin .admin-requests .panel-body,
+body.role-admin .activity-log .panel-body {
+    max-height: none !important;
+    height: auto !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto;
+    padding-bottom: 30px;
+}
+
+/* Make request cards pop even more in this spacious layout */
+body.role-admin .request-item {
+    padding: 24px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.role-admin .request-item:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
 }

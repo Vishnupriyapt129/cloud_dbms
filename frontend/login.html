@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,239 +13,775 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 20px;
         }
+
         .login-card {
             background: var(--glass-bg-light);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-lg);
-            padding: 60px 50px;
-            width: 480px;
+            padding: 55px 50px;
+            width: 500px;
             text-align: center;
             box-shadow: var(--glass-shadow);
             color: white;
         }
+
         .login-card h2 {
-            font-size: 2.2rem;
-            margin-bottom: 15px;
+            font-size: 2.1rem;
+            margin-bottom: 12px;
             font-weight: 700;
         }
-        .login-card p {
-            opacity: 0.85;
-            margin-bottom: 45px;
-            font-size: 1.1rem;
+
+        .login-card>p {
+            opacity: 0.80;
+            margin-bottom: 38px;
+            font-size: 1.05rem;
         }
+
         .role-btn {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.12);
             border: 1px solid var(--glass-border);
             border-radius: 15px;
-            padding: 25px;
+            padding: 22px;
             width: 100%;
             display: flex;
             align-items: center;
-            gap: 25px;
+            gap: 22px;
             cursor: pointer;
             transition: var(--transition);
             color: white;
             font-family: var(--font-main);
             text-align: left;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
+
         .role-btn:last-child {
             margin-bottom: 0;
         }
+
         .role-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-4px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+            border-color: rgba(255, 255, 255, 0.45);
         }
+
         .role-btn i {
-            font-size: 2.8rem;
-            width: 60px;
+            font-size: 2.5rem;
+            width: 55px;
             text-align: center;
             color: white;
         }
+
         .btn-contents h3 {
-            font-size: 1.35rem;
-            margin-bottom: 8px;
+            font-size: 1.25rem;
+            margin-bottom: 6px;
             font-weight: 600;
         }
+
         .btn-contents p {
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             margin-bottom: 0;
-            opacity: 0.8;
+            opacity: 0.78;
         }
+
         .input-group {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
-        .input-group i {
+
+        .input-group .field-icon {
             position: absolute;
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: rgba(255,255,255,0.7);
+            color: rgba(255, 255, 255, 0.65);
         }
-        .input-group input {
+
+        .input-group .show-pwd-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.65);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .input-group .show-pwd-icon:hover {
+            color: white;
+        }
+
+        .input-group .field-icon.top-align {
+            top: 17px;
+            transform: none;
+        }
+
+        .input-group input,
+        .input-group textarea {
             width: 100%;
-            padding: 15px 15px 15px 45px;
-            background: rgba(255, 255, 255, 0.1);
+            padding: 14px 14px 14px 44px;
+            background: rgba(255, 255, 255, 0.09);
             border: 1px solid var(--glass-border);
             border-radius: 12px;
             color: white;
             font-family: var(--font-main);
-            font-size: 1rem;
+            font-size: 0.97rem;
             outline: none;
             box-sizing: border-box;
             transition: var(--transition);
         }
-        .input-group input::placeholder {
-            color: rgba(255,255,255,0.6);
+
+        .input-group textarea {
+            padding-top: 13px;
+            resize: none;
+            height: 88px;
+            line-height: 1.45;
         }
-        .input-group input:focus {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.6);
+
+        .input-group input::placeholder,
+        .input-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.55);
         }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            background: rgba(255, 255, 255, 0.17);
+            border-color: rgba(101, 173, 136, 0.7);
+        }
+
+        /* Fix Chrome/Edge autofill removing transparency and hiding icons */
+        .input-group input:-webkit-autofill,
+        .input-group input:-webkit-autofill:hover,
+        .input-group input:-webkit-autofill:focus,
+        .input-group input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px #5a967a inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
         .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
+            margin-bottom: 24px;
+            font-size: 0.88rem;
         }
+
         .form-options a {
             color: white;
             text-decoration: none;
-            opacity: 0.8;
+            opacity: 0.78;
             transition: var(--transition);
         }
+
         .form-options a:hover {
             opacity: 1;
             text-decoration: underline;
         }
+
         .submit-btn {
             background: var(--primary-color);
             color: white;
             border: none;
             border-radius: 12px;
-            padding: 15px;
+            padding: 14px;
             width: 100%;
             font-family: var(--font-main);
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
+
         .submit-btn:hover {
             background: var(--primary-dark);
             transform: translateY(-2px);
         }
+
+        .submit-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .back-btn {
             background: transparent;
             color: white;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.28);
             border-radius: 12px;
-            padding: 15px;
+            padding: 13px;
             width: 100%;
             font-family: var(--font-main);
-            font-size: 1rem;
+            font-size: 0.97rem;
             cursor: pointer;
             transition: var(--transition);
         }
+
         .back-btn:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.09);
+        }
+
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0;
+            color: rgba(255, 255, 255, 0.42);
+            font-size: 0.8rem;
+        }
+
+        .section-divider::before,
+        .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .user-form-note {
+            background: rgba(101, 173, 136, 0.1);
+            border: 1px solid rgba(101, 173, 136, 0.3);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: left;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .user-form-note i {
+            color: #65ad88;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        /* Pending Screen */
+        .pending-icon-wrap {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, rgba(101, 173, 136, 0.25), rgba(55, 130, 93, 0.35));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 22px;
+            border: 2px solid rgba(101, 173, 136, 0.5);
+            animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(101, 173, 136, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 14px rgba(101, 173, 136, 0);
+            }
+        }
+
+        .pending-criteria {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 22px 0;
+            text-align: left;
+        }
+
+        .criteria-chip {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .criteria-chip.done i {
+            color: #2ecc71;
+        }
+
+        .criteria-chip.pending-anim i {
+            color: #f39c12;
+            animation: spin-slow 1.8s linear infinite;
+        }
+
+        @keyframes spin-slow {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                top: -60px;
+                opacity: 0;
+            }
+
+            to {
+                top: 22px;
+                opacity: 1;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
-        <div class="login-card" id="role-selection">
+
+        <!-- ===== SCREEN 1: Role Selection ===== -->
+        <div class="login-card" id="screen-roles">
             <i class="fa-solid fa-cloud" style="font-size: 3.5rem; margin-bottom: 20px;"></i>
             <h2>Sign In to CloudHub</h2>
-            <p>Select your account configuration role to continue testing</p>
-            
-            <button type="button" class="role-btn" onclick="showLoginForm('admin')">
+            <p>Choose your role to continue</p>
+
+            <button type="button" class="role-btn" onclick="showScreen('admin')">
                 <i class="fa-solid fa-user-shield"></i>
                 <div class="btn-contents">
                     <h3>Administrator</h3>
-                    <p>Full suite access, file control, and user management capabilities.</p>
+                    <p>Full suite access — file control and user management.</p>
                 </div>
             </button>
-            
-            <button type="button" class="role-btn" onclick="showLoginForm('user')">
+
+            <button type="button" class="role-btn" onclick="showScreen('user-login')">
                 <i class="fa-solid fa-user"></i>
                 <div class="btn-contents">
                     <h3>Regular User</h3>
-                    <p>Standard view-only mode. Access restricted features safely.</p>
+                    <p>Log in or request new access.</p>
                 </div>
             </button>
         </div>
-        
-        <div class="login-card" id="credentials-form" style="display: none;">
-            <i class="fa-solid fa-user-lock" style="font-size: 3.5rem; margin-bottom: 20px;"></i>
-            <h2 id="form-title">Admin Login</h2>
-            <p>Enter your secure credentials to authenticate</p>
-            
-            <form onsubmit="handleAuth(event)">
+
+        <!-- ===== SCREEN 2b: User Login ===== -->
+        <div class="login-card" id="screen-user-login" style="display:none;">
+            <i class="fa-solid fa-user-check" style="font-size:3.2rem;margin-bottom:18px;"></i>
+            <h2>User Login</h2>
+            <p>Access your files and folders</p>
+
+            <form onsubmit="handleUserLogin(event)">
                 <div class="input-group">
-                    <i class="fa-solid fa-envelope"></i>
-                    <input type="email" id="email" placeholder="Email Address" required>
+                    <i class="fa-solid fa-envelope field-icon"></i>
+                    <input type="email" id="user-login-email" placeholder="Email Address" autocomplete="username">
                 </div>
                 <div class="input-group">
-                    <i class="fa-solid fa-lock"></i>
-                    <input type="password" id="password" placeholder="Password" required>
+                    <i class="fa-solid fa-lock field-icon"></i>
+                    <input type="password" id="user-login-password" placeholder="Password"
+                        autocomplete="current-password">
+                    <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('user-login-password', this)"></i>
                 </div>
-                
-                <div class="form-options">
-                    <label><input type="checkbox"> Remember me</label>
-                    <a href="#" onclick="alert('A password reset link has been dispatched to your email address!')">Forgot Password?</a>
+                <button type="submit" class="submit-btn" id="user-login-btn">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In as User
+                </button>
+                <div style="margin-top:20px; text-align:center;">
+                    <a href="#" onclick="showScreen('user')"
+                        style="color:hsl(145, 20%, 88%);font-size:0.95rem;text-decoration:none;font-weight:500;">Need an
+                        account? Request access</a>
                 </div>
-                
-                <button type="submit" class="submit-btn"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
-                <button type="button" class="back-btn" onclick="goBack()">Back to Roles</button>
+                <button type="button" class="back-btn" onclick="goBackToRoles()">← Back to Roles</button>
             </form>
         </div>
+
+        <!-- ===== SCREEN 2a: Admin Login ===== -->
+        <div class="login-card" id="screen-admin" style="display:none;">
+            <i class="fa-solid fa-user-shield" style="font-size:3.2rem;margin-bottom:18px;"></i>
+            <h2>Administrator Login</h2>
+            <p>Enter your secure admin credentials</p>
+
+            <form onsubmit="handleAdminAuth(event)">
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope field-icon"></i>
+                    <input type="email" id="admin-email" placeholder="Admin Email Address" autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock field-icon"></i>
+                    <input type="password" id="admin-password" placeholder="Password" autocomplete="current-password">
+                    <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('admin-password', this)"></i>
+                </div>
+                <div class="form-options">
+                    <label><input type="checkbox"> Remember me</label>
+                    <a href="#" onclick="alert('A reset link has been sent to your admin email.')">Forgot Password?</a>
+                </div>
+                <button type="submit" class="submit-btn" id="admin-submit-btn">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In as Admin
+                </button>
+                <button type="button" class="back-btn" onclick="goBackToRoles()">← Back to Roles</button>
+            </form>
+        </div>
+
+        <!-- ===== SCREEN 2c: User Sign-Up + Access Request ===== -->
+        <div class="login-card" id="screen-user" style="display:none;">
+            <i class="fa-solid fa-user-plus" style="font-size:3.2rem;margin-bottom:18px;"></i>
+            <h2>Request Access</h2>
+            <p>Submit your details for admin approval</p>
+
+            <div class="user-form-note">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Your account is created immediately. A request is auto-sent to the admin — you'll get full access
+                    once they approve it.</span>
+            </div>
+
+            <div onkeypress="if(event.key==='Enter') handleUserSignup(event)">
+                <div class="input-group">
+                    <i class="fa-solid fa-id-card field-icon"></i>
+                    <input type="text" id="user-name" placeholder="Full Name" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope field-icon"></i>
+                    <input type="email" id="user-email" placeholder="Email Address" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock field-icon"></i>
+                    <input type="password" id="user-password" placeholder="Create a Password"
+                        autocomplete="new-password">
+                </div>
+
+                <div class="section-divider">Access Request Details</div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-tag field-icon"></i>
+                    <input type="text" id="user-request-type"
+                        placeholder="Request Type  (e.g. Storage Upgrade, Team Access)">
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-comment-dots field-icon top-align"></i>
+                    <textarea id="user-reason"
+                        placeholder="Briefly explain why you need access to CloudHub..."></textarea>
+                </div>
+
+                <button type="button" class="submit-btn" id="user-submit-btn" onclick="handleUserSignup(event)">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Access Request
+                </button>
+                <button type="button" class="back-btn" onclick="goBackToRoles()">← Back to Roles</button>
+            </div>
+        </div>
+
+        <!-- ===== SCREEN 3: Pending Approval ===== -->
+        <div class="login-card" id="screen-pending" style="display:none;">
+            <div class="pending-icon-wrap">
+                <i class="fa-solid fa-hourglass-half" style="font-size:2.5rem;color:#65ad88;"></i>
+            </div>
+            <h2>Request Submitted!</h2>
+            <p>Waiting for an administrator to review your request</p>
+
+            <div class="pending-criteria">
+                <div class="criteria-chip done">
+                    <i class="fa-solid fa-check-circle"></i> User Role
+                </div>
+                <div class="criteria-chip done">
+                    <i class="fa-solid fa-check-circle"></i> Login Limit
+                </div>
+                <div class="criteria-chip done">
+                    <i class="fa-solid fa-check-circle"></i> Reason Provided
+                </div>
+                <div class="criteria-chip pending-anim">
+                    <i class="fa-solid fa-spinner"></i> Admin Approval
+                </div>
+            </div>
+
+            <p style="font-size:0.87rem;opacity:0.72;margin-top:0;">
+                Submitted as <strong id="pending-name-display">—</strong>.<br>
+                Once approved, click below to enter the dashboard.
+            </p>
+
+            <button type="button" class="submit-btn" style="margin-top:22px;" onclick="checkApprovalStatus()">
+                <i class="fa-solid fa-rotate"></i> Check Approval Status
+            </button>
+            <button type="button" class="back-btn" onclick="goBackToRoles()">← Start Over</button>
+        </div>
+
     </div>
-    
-    <script>
-        let selectedRole = '';
-        
-        function showLoginForm(role) {
-            selectedRole = role;
-            document.getElementById('role-selection').style.display = 'none';
-            document.getElementById('credentials-form').style.display = 'block';
-            
-            if (role === 'admin') {
-                document.getElementById('form-title').innerText = 'Administrator Login';
-            } else {
-                document.getElementById('form-title').innerText = 'User Login';
+
+    <!-- Custom UI Modal System -->
+    <div class="custom-modal-overlay" id="custom-modal">
+        <div class="custom-modal-card">
+            <h3 id="modal-title">Prompt</h3>
+            <p id="modal-desc">Description goes here</p>
+            <input type="text" id="modal-input" style="display: none;" placeholder="Type here...">
+            <div class="modal-actions">
+                <button class="btn btn-white" id="modal-cancel">Cancel</button>
+                <button id="modal-confirm" class="btn btn-primary"
+                    style="background:linear-gradient(135deg,#00b09b,#96c93d);border:none;color:white;font-weight:600;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="toast-error"
+        style="display:none;position:fixed;top:25px;left:50%;transform:translateX(-50%);background:rgba(25,20,38,0.9);backdrop-filter:blur(16px);border:1px solid rgba(231,76,60,0.6);box-shadow:0 15px 35px rgba(0,0,0,0.3);color:#f8f9fa;padding:13px 26px;border-radius:14px;font-family:var(--font-main);font-weight:500;z-index:1000;animation:slideDown 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
+        <i class="fa-solid fa-shield-halved" style="margin-right:10px;color:#e74c3c;"></i>
+        <span id="toast-error-text">Access Denied!</span>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="toast-success"
+        style="display:none;position:fixed;top:25px;left:50%;transform:translateX(-50%);background:rgba(18,38,28,0.9);backdrop-filter:blur(16px);border:1px solid rgba(46,204,113,0.55);box-shadow:0 15px 35px rgba(0,0,0,0.3);color:#f8f9fa;padding:13px 26px;border-radius:14px;font-family:var(--font-main);font-weight:500;z-index:1000;animation:slideDown 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
+        <i class="fa-solid fa-check-circle" style="margin-right:10px;color:#2ecc71;"></i>
+        <span id="toast-success-text">Success!</span>
+    </div>
+
+    <style>
+        @keyframes slideDown {
+            from {
+                top: -60px;
+                opacity: 0;
             }
-            
-            // Ensure inputs are completely natively empty for your presentation!
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
+
+            to {
+                top: 22px;
+                opacity: 1;
+            }
         }
-        
-        function goBack() {
-            document.getElementById('credentials-form').style.display = 'none';
-            document.getElementById('role-selection').style.display = 'block';
-            document.getElementById('password').value = '';
+    </style>
+
+    <script>
+        const API_BASE = window.location.origin + '/api';
+        let pendingUserId = null;
+
+        /* ---- Screen Navigation ---- */
+        function showScreen(name) {
+            ['roles', 'admin', 'user-login', 'user', 'pending'].forEach(s =>
+                document.getElementById('screen-' + s).style.display = 'none'
+            );
+            document.getElementById('screen-' + name).style.display = 'block';
         }
 
-        function handleAuth(event) {
-            event.preventDefault();
-            // Simulating real DBMS auth delay for presentation effect
-            const btn = document.querySelector('.submit-btn');
+        function goBackToRoles() {
+            showScreen('roles');
+        }
+
+        /* ---- Toggle Password Visibility ---- */
+        function togglePassword(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconElement.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                iconElement.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        /* ---- Custom UI Modal Engine ---- */
+        function showModal({ title, desc, showInput = false, defaultValue = '', onConfirm }) {
+            const modal = document.getElementById('custom-modal');
+            const titleEl = document.getElementById('modal-title');
+            const descEl = document.getElementById('modal-desc');
+            const inputEl = document.getElementById('modal-input');
+            const cancelBtn = document.getElementById('modal-cancel');
+            const confirmBtn = document.getElementById('modal-confirm');
+
+            titleEl.innerText = title;
+            descEl.innerText = desc;
+
+            inputEl.value = defaultValue;
+            inputEl.style.display = showInput ? 'block' : 'none';
+
+            modal.classList.add('active');
+            if (showInput) inputEl.focus();
+
+            const cleanup = () => {
+                modal.classList.remove('active');
+                cancelBtn.onclick = null;
+                confirmBtn.onclick = null;
+            };
+
+            cancelBtn.onclick = cleanup;
+
+            confirmBtn.onclick = () => {
+                const val = inputEl.value;
+                cleanup();
+                onConfirm(showInput ? val : null);
+            };
+        }
+
+        /* ---- Toast Helpers ---- */
+        function showToast(type, msg) {
+            const el = document.getElementById('toast-' + type);
+            document.getElementById('toast-' + type + '-text').innerText = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3800);
+        }
+
+        /* ---- ADMIN LOGIN ---- */
+        function handleAdminAuth(event) {
+            if (event) event.preventDefault();
+            const email = document.getElementById('admin-email').value.toLowerCase().trim();
+
+            if (email !== 'anusha@gmail.com' && email !== 'vishnupriya@gmail.com') {
+                showToast('error', 'Access Denied: Invalid Administrator Credentials');
+                const pwd = document.getElementById('admin-password');
+                pwd.value = '';
+                pwd.blur();
+                document.getElementById('admin-email').focus();
+                return;
+            }
+
+            const btn = document.getElementById('admin-submit-btn');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
-            
+
             setTimeout(() => {
-                localStorage.setItem('cloudhub_role', selectedRole);
-                window.location.href = 'index.html?role=' + selectedRole;
+                const uid = email.includes('vishnupriya') ? 2 : 1;
+                localStorage.setItem('cloudhub_role', 'admin');
+                localStorage.setItem('cloudhub_uid', uid);
+                window.location.href = 'index.html?role=admin';
             }, 800);
+        }
+
+        /* ---- USER SIGN-UP + AUTO REQUEST ---- */
+        async function handleUserSignup(event) {
+            if (event) event.preventDefault();
+
+            const name = document.getElementById('user-name').value.trim();
+            const email = document.getElementById('user-email').value.toLowerCase().trim();
+            const pwd = document.getElementById('user-password').value;
+            const reqType = document.getElementById('user-request-type').value.trim();
+            const reason = document.getElementById('user-reason').value.trim();
+
+            if (!name) { showToast('error', 'Please enter your full name.'); return; }
+            if (!email || !email.includes('@')) { showToast('error', 'Please enter a valid email address.'); return; }
+            if (!pwd || pwd.length < 4) { showToast('error', 'Password must be at least 4 characters long.'); return; }
+            if (!reason) { showToast('error', 'Please provide a reason for your access request.'); return; }
+
+            const btn = document.getElementById('user-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/user/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password: pwd,
+                        request_type: reqType || 'General Access',
+                        reason
+                    })
+                });
+
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    pendingUserId = result.data.user_id;
+                    document.getElementById('pending-name-display').textContent = name;
+                    showScreen('pending');
+                    showToast('success', 'Request submitted! Awaiting admin approval.');
+                } else if (result.status === 'already_accepted') {
+                    showModal({
+                        title: 'Access Already Granted',
+                        desc: result.message,
+                        showInput: false,
+                        onConfirm: () => { showScreen('user-login'); }
+                    });
+                } else {
+                    showToast('error', result.message || 'Signup failed. Please try again.');
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                showToast('error', 'Server offline — run: python app.py');
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
+                btn.disabled = false;
+            }
+        }
+
+        /* ---- USER LOGIN ---- */
+        async function handleUserLogin(event) {
+            if (event) event.preventDefault();
+
+            const email = document.getElementById('user-login-email').value.toLowerCase().trim();
+            const pwd = document.getElementById('user-login-password').value;
+
+            if (!email || !pwd) { showToast('error', 'Please enter your email and password.'); return; }
+
+            const btn = document.getElementById('user-login-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/user/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password: pwd })
+                });
+
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    showToast('success', 'Login successful! Redirecting...');
+                    setTimeout(() => {
+                        localStorage.setItem('cloudhub_role', 'user');
+                        localStorage.setItem('cloudhub_uid', result.data.user_id);
+                        window.location.href = 'index.html?role=user';
+                    }, 800);
+                } else {
+                    showToast('error', result.message || 'Login failed.');
+                    document.getElementById('user-login-password').value = '';
+                    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In as User';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                showToast('error', 'Server offline — run: python app.py');
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In as User';
+                btn.disabled = false;
+            }
+        }
+
+        /* ---- CHECK APPROVAL STATUS ---- */
+        async function checkApprovalStatus() {
+            if (!pendingUserId) {
+                showToast('error', 'Session lost. Please sign up again.');
+                return;
+            }
+            const btn = document.querySelector('#screen-pending .submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/user/status/${pendingUserId}`);
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    const s = result.data.request_status;
+                    if (s === 'accepted') {
+                        showToast('success', 'Approved! Redirecting to your dashboard...');
+                        setTimeout(() => {
+                            localStorage.setItem('cloudhub_role', 'user');
+                            localStorage.setItem('cloudhub_uid', pendingUserId);
+                            window.location.href = 'index.html?role=user';
+                        }, 1400);
+                        return;
+                    } else if (s === 'rejected') {
+                        showToast('error', 'Your request was rejected by the admin.');
+                    } else {
+                        showToast('error', 'Still pending — please wait for admin review.');
+                    }
+                } else {
+                    showToast('error', 'Could not fetch your status. Try again shortly.');
+                }
+            } catch (e) {
+                showToast('error', 'Server offline — run: python app.py');
+            }
+
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Check Approval Status';
+            btn.disabled = false;
         }
     </script>
 </body>
+
 </html>
