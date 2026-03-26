@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     email            VARCHAR(100) UNIQUE NOT NULL,
     password_hash    VARCHAR(255) NOT NULL,
     role             ENUM('admin', 'user') DEFAULT 'user',
-    storage_used_gb  DECIMAL(10, 2) DEFAULT 0.00,
-    storage_total_gb DECIMAL(10, 2) DEFAULT 20.00,
+    storage_used_gb  DECIMAL(15, 6) DEFAULT 0.000000,
+    storage_total_gb DECIMAL(15, 6) DEFAULT 20.000000,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

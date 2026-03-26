@@ -444,10 +444,18 @@
                     <i class="fa-solid fa-envelope field-icon"></i>
                     <input type="email" id="user-email" placeholder="Email Address" autocomplete="off">
                 </div>
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom: 8px;">
                     <i class="fa-solid fa-lock field-icon"></i>
                     <input type="password" id="user-password" placeholder="Create a Password"
-                        autocomplete="new-password">
+                        autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
+                    <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('user-password', this)"></i>
+                </div>
+
+                <div id="password-strength-container" style="display: none; margin-bottom: 20px;">
+                    <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 4px;">
+                        <div id="strength-bar" style="height: 100%; width: 0%; background: #e74c3c; transition: all 0.3s ease;"></div>
+                    </div>
+                    <div id="strength-text" style="font-size: 0.78rem; text-align: right; opacity: 0.7; font-weight: 600;">Strength: Weak</div>
                 </div>
 
                 <div class="section-divider">Access Request Details</div>
@@ -549,7 +557,7 @@
     </style>
 
     <script>
-        const API_BASE = window.location.origin + '/api';
+        const API_BASE = (window.location.protocol === 'file:' || window.location.origin === 'null') ? 'http://localhost:5000/api' : window.location.origin + '/api';
         let pendingUserId = null;
 
         /* ---- Screen Navigation ---- */
@@ -564,7 +572,6 @@
             showScreen('roles');
         }
 
-        /* ---- Toggle Password Visibility ---- */
         function togglePassword(inputId, iconElement) {
             const input = document.getElementById(inputId);
             if (input.type === 'password') {
@@ -573,6 +580,44 @@
             } else {
                 input.type = 'password';
                 iconElement.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        /* ---- Password Strength Checker ---- */
+        function checkPasswordStrength(password) {
+            const container = document.getElementById('password-strength-container');
+            if (password.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+
+            let strength = 0;
+            if (password.length >= 8) strength += 25;
+            if (password.match(/[A-Z]/)) strength += 25;
+            if (password.match(/[0-9]/)) strength += 25;
+            if (password.match(/[^A-Za-z0-9]/)) strength += 25;
+
+            const bar = document.getElementById('strength-bar');
+            const text = document.getElementById('strength-text');
+            bar.style.width = strength + '%';
+
+            if (strength <= 25) {
+                bar.style.background = '#e74c3c';
+                text.innerText = 'Strength: Weak';
+                text.style.color = '#e74c3c';
+            } else if (strength <= 50) {
+                bar.style.background = '#f39c12';
+                text.innerText = 'Strength: Fair';
+                text.style.color = '#f39c12';
+            } else if (strength <= 75) {
+                bar.style.background = '#3498db';
+                text.innerText = 'Strength: Good';
+                text.style.color = '#3498db';
+            } else {
+                bar.style.background = '#2ecc71';
+                text.innerText = 'Strength: Strong';
+                text.style.color = '#2ecc71';
             }
         }
 
@@ -622,7 +667,7 @@
             if (event) event.preventDefault();
             const email = document.getElementById('admin-email').value.toLowerCase().trim();
 
-            if (email !== 'anusha@gmail.com' && email !== 'vishnupriya@gmail.com') {
+            if (email !== 'anushakpramod24@gmail.com' && email !== 'vishnupriyapt29@gmail.com') {
                 showToast('error', 'Access Denied: Invalid Administrator Credentials');
                 const pwd = document.getElementById('admin-password');
                 pwd.value = '';
@@ -638,7 +683,7 @@
                 const uid = email.includes('vishnupriya') ? 2 : 1;
                 localStorage.setItem('cloudhub_role', 'admin');
                 localStorage.setItem('cloudhub_uid', uid);
-                window.location.href = 'index.html?role=admin';
+                window.location.href = `index.html?role=admin&uid=${uid}`;
             }, 800);
         }
 
@@ -681,13 +726,27 @@
                     document.getElementById('pending-name-display').textContent = name;
                     showScreen('pending');
                     showToast('success', 'Request submitted! Awaiting admin approval.');
+                    
+                    // Reset the form fields precisely so reopening it exhibits a blank slate
+                    document.getElementById('user-name').value = '';
+                    document.getElementById('user-email').value = '';
+                    document.getElementById('user-password').value = '';
+                    document.getElementById('user-request-type').value = '';
+                    document.getElementById('user-reason').value = '';
+                    checkPasswordStrength(''); // Reset the UI bar
+                    
+                    // Reset the button
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
+                    btn.disabled = false;
+                    
+                    // Execute a hard browser refresh sequence as requested
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2500);
                 } else if (result.status === 'already_accepted') {
-                    showModal({
-                        title: 'Access Already Granted',
-                        desc: result.message,
-                        showInput: false,
-                        onConfirm: () => { showScreen('user-login'); }
-                    });
+                    showToast('error', result.message);
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
+                    btn.disabled = false;
                 } else {
                     showToast('error', result.message || 'Signup failed. Please try again.');
                     btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
@@ -727,7 +786,7 @@
                     setTimeout(() => {
                         localStorage.setItem('cloudhub_role', 'user');
                         localStorage.setItem('cloudhub_uid', result.data.user_id);
-                        window.location.href = 'index.html?role=user';
+                        window.location.href = `index.html?role=user&uid=${result.data.user_id}`;
                     }, 800);
                 } else {
                     showToast('error', result.message || 'Login failed.');
@@ -763,7 +822,7 @@
                         setTimeout(() => {
                             localStorage.setItem('cloudhub_role', 'user');
                             localStorage.setItem('cloudhub_uid', pendingUserId);
-                            window.location.href = 'index.html?role=user';
+                            window.location.href = `index.html?role=user&uid=${pendingUserId}`;
                         }, 1400);
                         return;
                     } else if (s === 'rejected') {

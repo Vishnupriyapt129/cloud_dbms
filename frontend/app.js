@@ -1,5 +1,5 @@
 // Dynamically mounts to ANY custom domain name seamlessly!
-const API_BASE = window.location.origin + '/api';
+const API_BASE = (window.location.protocol === 'file:' || window.location.origin === 'null') ? 'http://localhost:5000/api' : window.location.origin + '/api';
 
 function getActiveUid() {
     return localStorage.getItem('cloudhub_uid') || '1';
@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add(`role-${role}`);
 
     fetchUserData();
+    checkApprovalStatus();
     fetchFolders();
     fetchFiles();
     fetchAccessControl();
@@ -106,17 +107,52 @@ async function fetchUserData() {
             if(dropdownEmail) dropdownEmail.textContent = user.email || '';
 
             // Storage updates
-            document.getElementById('storage-text').textContent = `Storage Used: ${user.storage.used_gb} GB of ${user.storage.total_gb} GB`;
+            let usedGB = Number(user.storage.used_gb);
+            let totalGB = Number(user.storage.total_gb);
+            let usedStr;
+            if (usedGB === 0) {
+                usedStr = "0 MB";
+            } else if (usedGB < 1/1024) {
+                usedStr = (usedGB * 1024 * 1024).toFixed(1) + " KB";
+            } else if (usedGB < 1) {
+                usedStr = (usedGB * 1024).toFixed(1) + " MB";
+            } else {
+                usedStr = usedGB.toFixed(2) + " GB";
+            }
+            document.getElementById('storage-text').textContent = `Storage Used: ${usedStr} out of ${totalGB} GB`;
+
+            // Ensure even tiny sizes (like MBs out of 20GB) show a visual slice of green!
+            let progressPercent = Number(user.storage.percentage) || 0;
+            if (usedGB > 0 && progressPercent < 1.5) {
+                progressPercent = 1.5; // Hardcode a visual baseline of 1.5% pixels wide.
+            }
 
             // Set progress bar with small delay for animation
             setTimeout(() => {
-                document.getElementById('storage-fill').style.width = `${user.storage.percentage}%`;
+                document.getElementById('storage-fill').style.width = `${progressPercent}%`;
             }, 300);
         }
     } catch (error) {
         console.error("Error fetching user data:", error);
         document.getElementById('welcome-message').textContent = 'Welcome!';
     }
+}
+
+async function checkApprovalStatus() {
+    const role = localStorage.getItem('cloudhub_role');
+    if (role === 'admin') return;
+    try {
+        const uid = getActiveUid();
+        const res = await authFetch(`${API_BASE}/user/status/${uid}`);
+        const result = await res.json();
+        if (result.status === 'success' && result.data.request_status === 'pending') {
+            window.cloudhubIsPending = true;
+            const uploadBtn = document.getElementById('upload-btn');
+            const createBtn = document.getElementById('create-folder-btn');
+            if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.title = 'Pending Admin Approval'; }
+            if (createBtn) { createBtn.disabled = true; createBtn.title = 'Pending Admin Approval'; }
+        }
+    } catch(e) {}
 }
 
 async function fetchFolders() {
@@ -199,9 +235,7 @@ async function fetchFiles(folderId = currentFolderId) {
                     <td>${file.date_modified}</td>
                     <td>
                         <div class="file-actions">
-                            <button class="action-btn"><i class="fa-solid fa-chevron-down"></i></button>
-                            <button class="action-btn"><i class="fa-solid fa-bookmark"></i></button>
-                            <button class="action-btn"><i class="fa-solid fa-minus"></i></button>
+                            <button class="action-btn" style="color: #e74c3c; ${window.cloudhubIsPending ? 'display:none;' : ''}" onclick="handleDeleteFile('${file.id}')"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </td>
                 `;
@@ -479,11 +513,35 @@ async function handleFileUpload(event) {
         if (result.status === 'success') {
             fetchFiles(); 
             fetchActivityLogs();
+            fetchUserData();
             showModal({ title: "Upload Success", desc: "File uploaded successfully!", showInput: false, onConfirm: () => {} });
         }
     } catch (e) {
         console.error("Upload failed", e);
     }
+}
+
+function handleDeleteFile(fileId) {
+    showModal({
+        title: "Delete File",
+        desc: "Are you sure you want to permanently delete this file from the cloud? This action cannot be undone.",
+        showInput: false,
+        onConfirm: async () => {
+            try {
+                const res = await authFetch(`${API_BASE}/files/${fileId}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    fetchFiles();
+                    fetchActivityLogs();
+                    fetchUserData();
+                } else {
+                    showModal({ title: "Delete Error", desc: result.message, showInput: false, onConfirm: () => {} });
+                }
+            } catch(e) {
+                console.error("Delete failed", e);
+            }
+        }
+    });
 }
 
 function handleAddUser() {

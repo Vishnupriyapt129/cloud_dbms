@@ -3,26 +3,7 @@ from flask_cors import CORS
 from datetime import datetime
 import pymysql
 import pymysql.cursors
-import smtplib
-from email.message import EmailMessage
-
-def send_approval_email(to_email, username):
-    sender_email = "cloudhub.admin1@gmail.com" # Put your real Gmail here
-    sender_password = "YOUR_APP_PASSWORD" # Generate an App Password in Gmail settings
-    
-    msg = EmailMessage()
-    msg['Subject'] = 'CloudHub - Access Approved!'
-    msg['From'] = f"CloudHub Admin <{sender_email}>"
-    msg['To'] = to_email
-    msg.set_content(f"Hello {username},\n\nYour request to access CloudHub has been approved by the admin! You can now log in to your account at http://localhost:5000/login.html.\n\nBest,\nCloudHub Team")
-    
-    try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=5) as smtp:
-            smtp.login(sender_email, sender_password)
-            smtp.send_message(msg)
-            print(f"Sent approval email to {to_email}")
-    except Exception as e:
-        print(f"Warning: Failed to send email to {to_email}. Ensure SMTP details are correctly configured. Error: {e}")
+import os
 
 app = Flask(__name__, template_folder='frontend', static_folder='frontend', static_url_path='')
 CORS(app)
@@ -36,10 +17,10 @@ def handle_exception(e):
 # MySQL DATABASE CONFIGURATION (PyMySQL)
 # ---------------------------------------------------------
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'password',
-    'database': 'cloudhub',
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASSWORD', 'password'),
+    'database': os.environ.get('DB_NAME', 'cloudhub'),
     'connect_timeout': 5
 }
 
@@ -246,10 +227,60 @@ def upload_file():
         "INSERT INTO activity_log (user_id, action, file_id, action_desc, action_icon) VALUES (%s, %s, %s, %s, %s)",
         (user_id, 'uploaded', new_file_id, file.filename, 'upload')
     )
+    
+    # Update storage usage
+    size_gb = size_bytes / (1024 * 1024 * 1024)
+    cursor.execute(
+        "UPDATE users SET storage_used_gb = storage_used_gb + %s WHERE user_id = %s",
+        (size_gb, user_id)
+    )
+    
     conn.commit()
     cursor.close()
     conn.close()
     return jsonify({"status": "success", "message": "File uploaded."}), 201
+
+@app.route('/api/files/<file_id>', methods=['DELETE'])
+def delete_file(file_id):
+    user_id = int(request.headers.get('Authorization', 1) or 1)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT filename, filesize FROM files WHERE file_id = %s AND owner_id = %s", (file_id, user_id))
+    f = cursor.fetchone()
+    if not f:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "File not found or unauthorized to delete"}), 404
+
+    # Calculate and subtract storage
+    size_str = f['filesize']
+    size_gb = 0
+    try:
+        parts = size_str.split()
+        if len(parts) == 2:
+            val, unit = float(parts[0]), parts[1].upper()
+            if unit == 'GB': size_gb = val
+            elif unit == 'MB': size_gb = val / 1024
+            elif unit == 'KB': size_gb = val / (1024 * 1024)
+            elif unit == 'B': size_gb = val / (1024 * 1024 * 1024)
+    except Exception:
+        pass
+
+    if size_gb > 0:
+        cursor.execute("UPDATE users SET storage_used_gb = GREATEST(0.00, storage_used_gb - %s) WHERE user_id = %s", (size_gb, user_id))
+
+    cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
+    cursor.execute(
+        "INSERT INTO activity_log (user_id, action, action_desc, action_icon) VALUES (%s, %s, %s, %s)",
+        (user_id, 'deleted file', f['filename'], 'trash')
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "message": "File deleted."}), 200
 
 # ---------------------------------------------------------
 # ACCESS CONTROL  (uses: access_control — access_id, user_id, file_id, permission)
@@ -361,15 +392,26 @@ def remove_user_access(file_id, user_id):
 
 @app.route('/api/activity', methods=['GET'])
 def get_activity_logs():
+    user_id = int(request.headers.get('Authorization', 1) or 1)
     conn = get_db_connection()
     if not conn:
         return jsonify({"status": "error", "message": "DB Error"}), 500
 
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    cursor.execute("""
+    
+    cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    if not u:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+    
+    role = u['role']
+    
+    base_sql = """
         SELECT
             a.log_id AS id,
-            u.username AS user_name,
+            us.username AS user_name,
             a.action,
             COALESCE(f.filename, a.action_desc, '—') AS target,
             a.action_icon AS icon,
@@ -381,10 +423,15 @@ def get_activity_logs():
               ELSE CONCAT(TIMESTAMPDIFF(DAY, a.action_time, NOW()), ' days ago')
             END AS time_ago
         FROM activity_log a
-        JOIN users u ON a.user_id = u.user_id
+        JOIN users us ON a.user_id = us.user_id
         LEFT JOIN files f ON a.file_id = f.file_id
-        ORDER BY a.action_time DESC LIMIT 10
-    """)
+    """
+    
+    if role == 'admin':
+        cursor.execute(base_sql + " ORDER BY a.action_time DESC LIMIT 10")
+    else:
+        cursor.execute(base_sql + " WHERE a.user_id = %s ORDER BY a.action_time DESC LIMIT 10", (user_id,))
+
     logs = cursor.fetchall()
     for l in logs:
         if l['time_ago'] == "0 mins ago":
@@ -414,14 +461,9 @@ def user_signup():
 
     try:
         if existing:
-            user_id = existing['user_id']
-            # Check if this user already has an accepted request
-            cursor.execute("SELECT status FROM user_requests WHERE user_id = %s AND status = 'accepted' LIMIT 1", (user_id,))
-            already_approved = cursor.fetchone()
-            if already_approved:
-                cursor.close()
-                conn.close()
-                return jsonify({"status": "already_accepted", "message": "You have already been accepted! Please access CloudHub through the User Login screen."}), 200
+            cursor.close()
+            conn.close()
+            return jsonify({"status": "already_accepted", "message": "you already have an access"}), 200
         else:
             name_parts = data['name'].strip().split()
             fname = name_parts[0]
@@ -520,7 +562,7 @@ def user_login():
     if status == 'pending':
         cursor.close()
         conn.close()
-        return jsonify({"status": "error", "message": "Account is still pending admin approval."}), 403
+        return jsonify({"status": "error", "message": "request not yet approved by admin"}), 403
     elif status == 'rejected':
         cursor.close()
         conn.close()
@@ -549,7 +591,7 @@ def get_user_requests():
     cursor.execute("SELECT role, email FROM users WHERE user_id = %s", (user_id,))
     user = cursor.fetchone()
     
-    admin_emails = ['anusha@gmail.com', 'vishnupriya@gmail.com']
+    admin_emails = ['anushakpramod24@gmail.com', 'vishnupriyapt29@gmail.com']
     if not user or user['role'] != 'admin' or user['email'] not in admin_emails:
         cursor.close()
         conn.close()
@@ -599,7 +641,7 @@ def manage_user_request(request_id, action):
     cursor.execute("SELECT role, email FROM users WHERE user_id = %s", (user_id_operator,))
     user = cursor.fetchone()
     
-    admin_emails = ['anusha@gmail.com', 'vishnupriya@gmail.com']
+    admin_emails = ['anushakpramod24@gmail.com', 'vishnupriyapt29@gmail.com']
     if not user or user['role'] != 'admin' or user['email'] not in admin_emails:
         cursor.close()
         conn.close()
@@ -622,9 +664,6 @@ def manage_user_request(request_id, action):
             (user_id_operator, log_action, log_desc, 'check' if action == 'approve' else 'trash')
         )
         
-        if action == 'approve':
-            # Run the email logic on approval
-            send_approval_email(req_info['email'], req_info['username'])
 
     conn.commit()
     cursor.close()
