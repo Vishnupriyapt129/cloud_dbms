@@ -1034,6 +1034,107 @@ body.role-admin .request-item:hover {
     background: rgba(55, 130, 93, 0.04);
 }
 
+/* =========================================================================
+   UX / TOASTS / FILE DROPS / LOADING SPINNERS
+   ========================================================================= */
+
+body {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#toast-container {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 16px 20px;
+    min-width: 300px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-left: 5px solid var(--purple-main);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    transform: translateX(120%);
+    opacity: 0;
+    animation: slideInToast 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+.toast.toast-error {
+    border-left-color: #ff4757;
+}
+
+.toast.toast-success {
+    border-left-color: #2ed573;
+}
+
+.toast-icon {
+    font-size: 1.3rem;
+}
+
+.toast-error .toast-icon { color: #ff4757; }
+.toast-success .toast-icon { color: #2ed573; }
+.toast-info .toast-icon { color: var(--purple-main); }
+
+@keyframes slideInToast {
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutToast {
+    to { transform: translateX(120%); opacity: 0; }
+}
+
+.drag-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(16, 172, 132, 0.2);
+    backdrop-filter: blur(6px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+    font-size: 2.2rem;
+    font-weight: 700;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.drag-overlay.active {
+    opacity: 1;
+}
+
+.drag-overlay i {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: bounce 1s ease infinite alternate;
+}
+
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-20px); }
+}
+
 /* Owner badge consistent column width */
 .admin-file-manager .file-table th:nth-child(2),
 .admin-file-manager .file-table td:nth-child(2) {

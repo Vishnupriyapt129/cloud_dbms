@@ -9,43 +9,107 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        .login-container {
+        .login-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 40px;
+            gap: 60px;
+        }
+
+        .system-info-side {
+            max-width: 500px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        @media (max-width: 1000px) {
+            .login-wrapper { flex-direction: column; gap: 40px; padding: 20px; }
+            .system-info-side { display: none; }
+        }
+
+        .system-info-side h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            margin-bottom: 10px;
+        }
+
+        .system-info-side p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+
+        .stat-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .mini-stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .mini-stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .mini-stat-card i { font-size: 1.8rem; margin-bottom: 15px; color: var(--purple-light); }
+        .mini-stat-card .val { font-size: 1.5rem; font-weight: 700; }
+        .mini-stat-card .lab { font-size: 0.85rem; opacity: 0.7; font-weight: 600; text-transform: uppercase; }
+
+        .login-container {
+            width: 520px;
         }
 
         .login-card {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            padding: 55px 50px;
-            width: 500px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 50px 40px;
             text-align: center;
-            box-shadow: var(--glass-shadow);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.2);
             color: white;
+            transition: var(--transition);
+        }
+
+        .login-card:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 50px 120px rgba(0, 0, 0, 0.25);
         }
 
         .login-card h2 {
-            font-size: 2.1rem;
+            font-size: 2.2rem;
             margin-bottom: 12px;
             font-weight: 700;
         }
 
         .login-card>p {
-            opacity: 0.80;
-            margin-bottom: 38px;
+            opacity: 0.85;
+            margin-bottom: 35px;
             font-size: 1.05rem;
         }
 
         .role-btn {
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 22px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
             width: 100%;
             display: flex;
             align-items: center;
@@ -340,14 +404,41 @@
         }
     </style>
 </head>
-
 <body>
-    <div class="login-container">
+    <div class="login-wrapper">
+        <div class="system-info-side">
+            <h1>CloudHub<br>Platform Access</h1>
+            <p>Unified Storage & Security Infrastructure for Modern Enterprises.</p>
+            
+            <div class="stat-cards-grid">
+                <div class="mini-stat-card">
+                    <i class="fa-solid fa-server"></i>
+                    <span class="val">99.9%</span>
+                    <span class="lab">Uptime</span>
+                </div>
+                <div class="mini-stat-card">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span class="val">256-bit</span>
+                    <span class="lab">Encryption</span>
+                </div>
+                <div class="mini-stat-card">
+                    <i class="fa-solid fa-users"></i>
+                    <span class="val">1,240</span>
+                    <span class="lab">Active Nodes</span>
+                </div>
+                <div class="mini-stat-card">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span class="val">&lt; 20ms</span>
+                    <span class="lab">Latency</span>
+                </div>
+            </div>
+        </div>
 
-        <!-- ===== SCREEN 1: Role Selection ===== -->
-        <div class="login-card" id="screen-roles">
-            <i class="fa-solid fa-cloud" style="font-size: 3.5rem; margin-bottom: 20px;"></i>
-            <h2>Sign In to CloudHub</h2>
+        <div class="login-container">
+            <!-- ===== SCREEN 1: Role Selection ===== -->
+            <div class="login-card" id="screen-roles">
+                <i class="fa-solid fa-cloud" style="font-size: 3.5rem; margin-bottom: 20px;"></i>
+                <h2>Sign In</h2>
             <p>Choose your role to continue</p>
 
             <button type="button" class="role-btn" onclick="showScreen('admin')">
@@ -841,6 +932,7 @@
             btn.disabled = false;
         }
     </script>
+        </div> <!-- end login-container -->
+    </div> <!-- end login-wrapper -->
 </body>
-
 </html>

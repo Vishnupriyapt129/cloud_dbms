@@ -707,7 +707,7 @@ async function handleFileUpload(event) {
             fetchFiles(); 
             fetchActivityLogs();
             fetchUserData();
-            showModal({ title: "Upload Success", desc: "File uploaded successfully!", showInput: false, onConfirm: () => {} });
+            showToast("success", "File uploaded successfully!");
         }
     } catch (e) {
         console.error("Upload failed", e);
@@ -930,7 +930,7 @@ function handleRenameFolder(event, folderId, oldName) {
                     fetchFolders();
                     fetchActivityLogs();
                 } else {
-                    showModal({ title: "Error", desc: result.message, showInput: false, onConfirm: () => {} });
+                    showToast("error", result.message);
                 }
             } catch (e) {
                 console.error("Rename failed", e);
@@ -954,7 +954,7 @@ function handleDeleteFolder(event, folderId, folderName) {
                     fetchActivityLogs();
                     fetchUserData(); // Updates storage
                 } else {
-                    showModal({ title: "Error", desc: result.message, showInput: false, onConfirm: () => {} });
+                    showToast("error", result.message);
                 }
             } catch(e) {
                 console.error("Delete failed", e);
@@ -962,3 +962,98 @@ function handleDeleteFolder(event, folderId, folderName) {
         }
     });
 }
+
+// ==========================================
+// UX ENHANCEMENTS: TOASTS & DRAG-AND-DROP
+// ==========================================
+
+function showToast(type, message) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    let iconClass = 'fa-info-circle';
+    if (type === 'success') iconClass = 'fa-check-circle';
+    if (type === 'error') iconClass = 'fa-exclamation-triangle';
+    
+    toast.innerHTML = `
+        <i class="fa-solid ${iconClass} toast-icon"></i>
+        <span>${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOutToast 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards';
+        setTimeout(() => toast.remove(), 400);
+    }, 4500);
+}
+
+// Global Drag and Drop Uploader Overrides
+document.addEventListener('DOMContentLoaded', () => {
+    let overlay = document.createElement('div');
+    overlay.className = 'drag-overlay';
+    overlay.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Drop file to upload';
+    document.body.appendChild(overlay);
+
+    let dragTimer;
+
+    document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if(!currentFolderId) return; // Only allow drop if a folder is open
+        
+        const dt = e.dataTransfer;
+        if (dt.types && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.includes('Files'))) {
+            overlay.classList.add('active');
+            clearTimeout(dragTimer);
+        }
+    });
+
+    document.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragTimer = setTimeout(() => {
+            overlay.classList.remove('active');
+        }, 100);
+    });
+
+    document.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        overlay.classList.remove('active');
+        if(!currentFolderId) return;
+        
+        let files = e.dataTransfer.files;
+        if(files.length > 0) {
+            const file = files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder_id', currentFolderId);
+            
+            showToast('info', `Uploading ${file.name}...`);
+            
+            try {
+                const res = await authFetch(`${API_BASE}/files/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    fetchFiles(); 
+                    fetchActivityLogs();
+                    fetchUserData();
+                    showToast('success', `${file.name} uploaded successfully!`);
+                } else {
+                    showToast('error', result.message || 'Upload failed');
+                }
+            } catch (err) {
+                console.error("Upload Drop Failed", err);
+                showToast('error', 'Network error during upload');
+            }
+        }
+    });
+});
