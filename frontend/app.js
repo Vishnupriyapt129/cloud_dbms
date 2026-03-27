@@ -57,12 +57,11 @@ function changeView(view) {
         }
     } else if (view === 'recent') {
         grid.innerHTML = '';
-        document.getElementById('file-panel').style.display = 'block';
-        document.getElementById('folder-breadcrumb').style.display = 'flex';
-        document.getElementById('open-folder-name').textContent = 'Recent (Last 24h)';
-        document.querySelector('#folder-breadcrumb .fa-folder').className = 'fa-solid fa-clock-rotate-left';
+        document.getElementById('file-panel').style.display = 'none'; // No table
+        document.getElementById('folder-breadcrumb').style.display = 'none'; // No breadcrumb needed
+        document.getElementById('welcome-message').textContent = 'Recent Activity (Last 24h)';
         
-        fetchFiles(null, 'recent');
+        fetchRecentOnlyGrid();
     } else {
         // For Shared/Trash - we show a placeholder for now
         grid.innerHTML = `
@@ -118,6 +117,37 @@ async function fetchRecentFilesForHome() {
             grid.appendChild(folderHeading);
         }
     } catch(e) { console.error("Home Recent Fetch Error:", e); }
+}
+
+async function fetchRecentOnlyGrid() {
+    try {
+        const res = await authFetch(`${API_BASE}/files?filter=recent`);
+        const result = await res.json();
+        const grid = document.getElementById('folder-grid');
+        grid.innerHTML = ''; 
+
+        if (result.status === 'success') {
+            const files = result.data;
+            if (files.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding: 60px 0; color:var(--text-muted);"><i class="fa-solid fa-clock-rotate-left" style="font-size:3rem; margin-bottom:15px; opacity:0.3;"></i><p>No uploaded files in the last 24 hours.</p></div>';
+                return;
+            }
+
+            files.forEach(file => {
+                const card = document.createElement('div');
+                card.className = 'recent-file-card';
+                card.style.width = '100%';
+                const iconBase = getFileIconClass(file.type);
+                const iClass = iconBase.split(' ')[1];
+                card.innerHTML = `
+                    <div class="file-mini-icon"><i class="fa-solid ${iClass}"></i></div>
+                    <div class="file-mini-name">${file.name}</div>
+                    <div style="font-size:0.6rem; opacity:0.4; margin-top:5px;">Uploaded ${file.date_modified}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    } catch(e) { console.error("Recent Grid Fetch Error:", e); }
 }
 
 async function showFullActivityLog() {
