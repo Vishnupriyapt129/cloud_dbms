@@ -122,7 +122,7 @@ async function fetchUserData() {
             } else {
                 usedStr = usedGB.toFixed(2) + " GB";
             }
-            document.getElementById('storage-text').textContent = `Storage Used: ${usedStr} out of ${totalGB} GB`;
+            document.getElementById('sidebar-storage-text').textContent = `Storage Used: ${usedStr} out of ${totalGB} GB`;
 
             // Ensure even tiny sizes (like MBs out of 20GB) show a visual slice of green!
             let progressPercent = Number(user.storage.percentage) || 0;
@@ -132,7 +132,7 @@ async function fetchUserData() {
 
             // Set progress bar with small delay for animation
             setTimeout(() => {
-                document.getElementById('storage-fill').style.width = `${progressPercent}%`;
+                document.getElementById('sidebar-storage-fill').style.width = `${progressPercent}%`;
             }, 300);
         }
     } catch (error) {
@@ -229,7 +229,7 @@ function openFolder(folderId, folderName, folderColor = '#ffa502') {
     document.querySelector('#folder-breadcrumb .fa-folder').style.color = folderColor;
 
     // Update header title
-    document.getElementById('browser-title').textContent = folderName;
+    // Removed browser-title
 
     // Show upload button
     const uploadArea = document.getElementById('upload-area');
@@ -243,7 +243,7 @@ function closeFolder() {
     document.getElementById('folder-grid').style.display = '';
     document.getElementById('file-panel').style.display = 'none';
     document.getElementById('folder-breadcrumb').style.display = 'none';
-    document.getElementById('browser-title').textContent = 'My Folders';
+    // Removed browser-title
 
     // Hide upload button
     const uploadArea = document.getElementById('upload-area');

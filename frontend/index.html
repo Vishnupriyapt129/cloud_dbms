@@ -5,281 +5,179 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CloudHub Dashboard</title>
-    <!-- Modern Font -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Style -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="dashboard">
-        <!-- TOP NAV -->
-        <nav class="top-nav">
-            <div class="logo">
-                <i class="fa-solid fa-cloud"></i> CloudHub
+    <div class="app-layout">
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-cloud-bolt"></i> <span>CloudHub</span>
             </div>
-            <div class="search-bar">
-                <i class="fa-solid fa-search search-icon"></i>
-                <input type="text" id="search-input" placeholder="Search files..." oninput="handleSearch(event)">
-            </div>
-            <div class="nav-actions">
-                <div class="user-profile" id="profile-dropdown-btn">
-                    <div class="avatar" id="nav-avatar">
-                        <i class="fa-solid fa-user"></i>
+            
+            <ul class="side-nav">
+                <li class="active"><a href="#" onclick="closeFolder()"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+                <li><a href="#"><i class="fa-solid fa-folder-tree"></i> <span>Folders</span></a></li>
+                <li><a href="#"><i class="fa-solid fa-clock-rotate-left"></i> <span>Recent</span></a></li>
+                <li><a href="#"><i class="fa-solid fa-share-nodes"></i> <span>Shared</span></a></li>
+                <li><a href="#"><i class="fa-solid fa-trash-can"></i> <span>Trash</span></a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="storage-card">
+                    <div class="storage-labels">
+                        <span>Used Storage</span>
+                        <span id="sidebar-storage-text">0 / 2 GB</span>
                     </div>
-                    <span id="nav-username">Loading...</span>
-                    <i class="fa-solid fa-chevron-down text-sm"></i>
-                    
-                    <!-- NEW DROPDOWN MENU -->
-                    <div class="profile-dropdown-menu" id="profile-dropdown-menu">
-                        <div class="dropdown-header">
-                            <strong id="dropdown-name">Loading...</strong>
-                            <div id="dropdown-email" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">...</div>
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item" onclick="triggerLogout()">
-                            <i class="fa-solid fa-right-from-bracket"></i> Logout
-                        </a>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="sidebar-storage-fill"></div>
                     </div>
+                    <button class="btn btn-upgrade"><i class="fa-solid fa-crown"></i> UPGRADE PRO</button>
                 </div>
             </div>
-        </nav>
+        </aside>
 
-        <main class="main-content">
-            <!-- PAGE HEADER -->
-            <header class="header">
-                <div class="welcome-text">
-                    <h1 id="welcome-message">Welcome!</h1>
-                    <p>Your Cloud Storage Dashboard</p>
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-portal">
+            <!-- Top Search & Profile -->
+            <header class="portal-header">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-input" placeholder="Search files, folders or users..." oninput="handleSearch(event)">
+                </div>
+                
+                <div class="header-actions">
+                    <div class="notif-badge"><i class="fa-solid fa-bell"></i></div>
+                    
+                    <div class="profile-pill" id="profile-dropdown-btn">
+                        <div class="avatar-sm" id="nav-avatar"><i class="fa-solid fa-user"></i></div>
+                        <div class="name-box">
+                             <span id="nav-username" class="u-name">...</span>
+                             <span id="nav-role" class="u-role">...</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down"></i>
+
+                        <!-- Dropdown -->
+                        <div class="profile-dropdown-menu" id="profile-dropdown-menu">
+                            <div class="dropdown-header">
+                                <strong id="dropdown-name">...</strong>
+                                <small id="dropdown-email">...</small>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" onclick="triggerLogout()">
+                                <i class="fa-solid fa-right-from-bracket"></i> Logout
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </header>
 
-            <div class="grid-container">
-                <!-- LEFT COLUMN — Folder Browser -->
-                <div class="left-col">
+            <div class="portal-body">
+                <!-- Welcome & Primary Actions -->
+                <section class="banner-section">
+                    <div class="welcome">
+                        <h1 id="welcome-message">Vault Access</h1>
+                        <p>Manage your secure cloud assets here.</p>
+                    </div>
+                    <div class="quick-btns">
+                        <button class="btn btn-primary" onclick="handleNewFolder()"><i class="fa-solid fa-plus"></i> New Folder</button>
+                        <button class="btn btn-accent" onclick="document.getElementById('file-upload-input').click()"><i class="fa-solid fa-upload"></i> Upload</button>
+                        <input type="file" id="file-upload-input" style="display:none;" onchange="handleFileUpload(event)">
+                    </div>
+                </section>
 
-                    <!-- FOLDER BROWSER CARD -->
-                    <section class="card folder-browser" id="folder-browser-card">
-                        <!-- Header: title + New Folder + Upload (upload shown only when folder selected) -->
-                        <div class="card-header" style="flex-wrap:wrap; gap:12px;">
-                            <div class="card-title">
-                                <i class="fa-solid fa-folder-open"></i>
-                                <span id="browser-title">My Folders</span>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:center;">
-                                <!-- Upload: hidden until a folder is selected -->
-                                <div id="upload-area" style="display:none;">
-                                    <input type="file" id="file-upload-input" style="display:none;" onchange="handleFileUpload(event)">
-                                    <button class="btn btn-primary" id="upload-btn"
-                                        onclick="document.getElementById('file-upload-input').click()"
-                                        style="padding:9px 18px;font-size:0.9rem;">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload File
-                                    </button>
-                                </div>
-                                <button class="btn btn-white" onclick="handleNewFolder()"
-                                    id="new-folder-btn" style="padding:9px 18px;font-size:0.9rem;">
-                                    <i class="fa-solid fa-folder-plus"></i> New Folder
-                                </button>
-                            </div>
+                <div class="core-grid">
+                    <div class="browser-container">
+                        <!-- Breadcrumb -->
+                        <div id="folder-breadcrumb" class="breadcrumb" style="display:none;">
+                            <button onclick="closeFolder()" class="btn-back"><i class="fa-solid fa-chevron-left"></i> My Cloud</button>
+                            <span class="sep">/</span>
+                            <span id="open-folder-name" class="current-folder"></span>
                         </div>
 
-                        <!-- Breadcrumb / back navigation -->
-                        <div id="folder-breadcrumb" style="display:none; align-items:center; gap:8px;
-                             padding:10px 0 14px; border-bottom:1px solid #edf2f7; margin-bottom:16px;
-                             font-size:0.95rem; color:var(--text-muted);">
-                            <button onclick="closeFolder()" style="background:none;border:none;cursor:pointer;
-                                color:var(--purple-dark);font-size:0.9rem;font-weight:600;display:flex;align-items:center;gap:6px;padding:0;">
-                                <i class="fa-solid fa-arrow-left"></i> Back to Folders
-                            </button>
-                            <span style="opacity:0.4;">|</span>
-                            <i class="fa-solid fa-folder" style="color:#ffa502;"></i>
-                            <span id="open-folder-name" style="font-weight:600;color:var(--text-dark);"></span>
+                        <!-- Grid -->
+                        <div id="folder-grid" class="modern-grid"></div>
+
+                        <!-- Table -->
+                        <div id="file-panel" class="file-table-container" style="display:none;">
+                             <table class="data-table">
+                                 <thead>
+                                     <tr>
+                                         <th>Name</th>
+                                         <th>Type</th>
+                                         <th>Size</th>
+                                         <th>Actions</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody id="file-list"></tbody>
+                             </table>
+                             <div id="file-empty-state" class="empty-box" style="display:none;">
+                                 <i class="fa-solid fa-cloud-moon"></i>
+                                 <h4>Folder is Empty</h4>
+                                 <p>Drop files here to start uploading</p>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel Activities -->
+                    <aside class="activity-panel">
+                        <!-- Admin Global Only -->
+                        <div id="admin-file-manager-panel" class="admin-card" style="display:none;">
+                            <h3><i class="fa-solid fa-shield-halved"></i> Master Control</h3>
+                            <select id="admin-user-filter" onchange="fetchAdminFiles()">
+                                <option value="all">All Users</option>
+                            </select>
+                            <div id="admin-file-list" class="mini-files"></div>
                         </div>
 
-                        <!-- FOLDER GRID — shown when no folder open -->
-                        <div id="folder-grid" class="folder-grid-view">
-                            <!-- Folder cards injected by JS -->
+                        <div class="activity-card">
+                            <h3><i class="fa-solid fa-bolt"></i> Live Feed</h3>
+                            <div id="activity-list" class="activity-feed"></div>
                         </div>
 
-                        <!-- FILE LIST — shown when a folder is open -->
-                        <div id="file-panel" style="display:none;">
-                            <div class="table-responsive">
-                                <table class="file-table">
-                                    <thead>
-                                        <tr>
-                                            <th>File Name</th>
-                                            <th>Type</th>
-                                            <th>Size</th>
-                                            <th>Date Modified</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="file-list">
-                                    </tbody>
-                                </table>
+                        <div class="access-card">
+                            <h3><i class="fa-solid fa-lock"></i> Share Access</h3>
+                            <div id="access-control-list">
+                                <p class="muted">Select a file to manage shared users</p>
                             </div>
-                            <!-- Empty state -->
-                            <div id="file-empty-state" style="display:none;text-align:center;
-                                 padding:40px 20px;color:var(--text-muted);">
-                                <i class="fa-solid fa-file-circle-plus"
-                                   style="font-size:2.5rem;display:block;margin-bottom:12px;opacity:0.35;"></i>
-                                <p style="font-weight:500;margin-bottom:8px;">This folder is empty</p>
-                                <p style="font-size:0.85rem;opacity:0.7;">Click <strong>Upload File</strong> to add files here.</p>
-                            </div>
-                        </div>
-
-                        <!-- STORAGE BAR -->
-                        <div class="storage-section" style="margin-top:20px;padding-top:18px;border-top:1px solid #edf2f7;">
-                            <div class="storage-text" id="storage-text">Storage Used: Loading...</div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="storage-fill" style="width:0%"></div>
+                            <!-- Access Control Modal Body Clone -->
+                            <div id="access-management" style="display:none;">
+                                <h4 id="access-filename">...</h4>
+                                <div id="access-list" class="user-access-list"></div>
+                                <button class="btn btn-sm" onclick="handleAddUser()">+ Add User</button>
                             </div>
                         </div>
-                    </section>
-
-                </div><!-- /left-col -->
-
-
-                <!-- RIGHT COLUMN -->
-                <div class="right-col">
-
-                    <!-- ACCESS CONTROL -->
-                    <section class="glass-panel access-control">
-                        <div class="panel-header">
-                            <h3>Access Control</h3>
-                            <i class="fa-solid fa-arrows-to-dot"></i>
-                        </div>
-                        <div class="panel-body card-inner">
-                            <div class="access-title">Manage Access: <span id="access-filename">...</span></div>
-                            <div class="user-list" id="access-list">
-                                <!-- Users injected via JS -->
-                            </div>
-                            <button class="btn btn-primary btn-full mt-3" onclick="handleAddUser()">
-                                <i class="fa-solid fa-user-plus"></i> Add User
-                            </button>
-                        </div>
-                    </section>
-
-                    <!-- PENDING REQUESTS (ADMIN ONLY) -->
-                    <section class="glass-panel admin-requests" id="admin-requests-panel" style="display: none; display: flex; flex-direction: column;">
-                        <div class="panel-header">
-                            <div>
-                                <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                                    <i class="fa-solid fa-clipboard-check"></i> Pending Requests
-                                </h3>
-                                <p style="font-size:0.78rem;opacity:0.65;font-weight:400;">Review criteria before approving or rejecting</p>
-                            </div>
-                            <span id="requests-badge" style="background:#37825d;color:white;font-size:0.8rem;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;">0</span>
-                        </div>
-                        <div class="panel-body card-inner" style="flex-grow: 1; max-height:520px;overflow-y:auto;padding:18px;">
-                            <div id="requests-list">
-                                <div style="text-align:center;padding:24px;opacity:0.6;">
-                                    <i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>
-                                    Loading requests...
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- ACTIVITY LOG -->
-                    <section class="glass-panel activity-log" style="display: flex; flex-direction: column;">
-                        <div class="panel-header">
-                            <h3>Activity Log</h3>
-                        </div>
-                        <div class="panel-body card-inner" style="flex-grow: 1; overflow-y: auto;">
-                            <ul class="activity-list" id="activity-list">
-                                <!-- Activities injected via JS -->
-                            </ul>
-                        </div>
-                    </section>
-
+                    </aside>
                 </div>
             </div>
-
-            <!-- ADMIN GLOBAL FILE MANAGER — full width, outside grid (admin only) -->
-            <section class="card admin-file-manager" id="admin-file-manager-panel" style="display:none; margin-top: 30px;">
-                <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
-                    <div class="card-title" style="color: #6366f1;">
-                        <i class="fa-solid fa-database"></i> All Users' Files
-                        <span id="admin-files-count" style="background: #6366f1; color: white; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-left: 6px;">0</span>
-                    </div>
-                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                        <!-- User Filter -->
-                        <select id="admin-user-filter" onchange="fetchAdminFiles()" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: var(--font-main); font-size: 0.9rem; color: var(--text-dark); background: white; cursor: pointer;">
-                            <option value="all">All Users</option>
-                        </select>
-                        <!-- Live Search -->
-                        <div style="position: relative;">
-                            <i class="fa-solid fa-search" style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
-                            <input type="text" id="admin-file-search" placeholder="Search files..." oninput="fetchAdminFiles()" style="padding: 8px 14px 8px 32px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: var(--font-main); font-size: 0.9rem; width: 220px; outline: none; color: var(--text-dark);">
-                        </div>
-                        <!-- Refresh -->
-                        <button onclick="fetchAdminFiles()" class="btn btn-white" style="padding: 8px 14px; font-size: 0.88rem;">
-                            <i class="fa-solid fa-rotate-right"></i> Refresh
-                        </button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="file-table">
-                        <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Owner</th>
-                                <th>Type</th>
-                                <th>Size</th>
-                                <th>Uploaded</th>
-                                <th style="text-align:center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-file-list">
-                            <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">
-                                <i class="fa-solid fa-spinner fa-spin"></i> Loading...
-                            </td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div id="admin-files-empty" style="display:none; text-align:center; padding: 40px 20px; color: var(--text-muted);">
-                    <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; display:block; margin-bottom: 12px; opacity: 0.4;"></i>
-                    No files found matching your filter.
-                </div>
-            </section>
-
         </main>
 
-        <!-- Toast Notification Container -->
-        <div id="toast-container"></div>
-        
-        <!-- Drag and Drop Overlay -->
+        <!-- Drag Overlay -->
         <div class="drag-overlay" id="drag-overlay">
             <i class="fa-solid fa-cloud-arrow-up"></i>
-            <p>Drop to upload to current folder</p>
+            <p>Release to Securely Upload</p>
         </div>
-    </div>
 
-    <!-- Frontend logic -->
-    <script>
-        // Seed localStorage from URL before app.js runs
-        (function() {
-            const p = new URLSearchParams(location.search);
-            if (p.get('role')) localStorage.setItem('cloudhub_role', p.get('role'));
-            if (p.get('uid'))  localStorage.setItem('cloudhub_uid',  p.get('uid'));
-        })();
-    </script>
-    <script src="app.js?v=3"></script>
-    <!-- Custom UI Modal System -->
-    <div class="custom-modal-overlay" id="custom-modal">
-        <div class="custom-modal-card">
-            <h3 id="modal-title">Prompt</h3>
-            <p id="modal-desc">Description goes here</p>
-            <input type="text" id="modal-input" style="display: none;" placeholder="Type here...">
-            <div class="modal-actions">
-                <button class="btn btn-white" id="modal-cancel">Cancel</button>
-                <button class="btn btn-primary" id="modal-confirm">Confirm</button>
+        <!-- Toast Container -->
+        <div id="toast-container"></div>
+
+        <!-- Confirm Modal (Keep for JS compatibility) -->
+        <div class="custom-modal-overlay" id="custom-modal">
+            <div class="custom-modal-card">
+                <h3 id="modal-title">Confirm</h3>
+                <p id="modal-desc"></p>
+                <input type="text" id="modal-input" placeholder="Type here...">
+                <div class="modal-actions">
+                    <button class="btn btn-white" id="modal-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="modal-confirm">Confirm</button>
+                </div>
             </div>
         </div>
     </div>
-</body>
 
+    <script src="app.js"></script>
+</body>
 </html>
