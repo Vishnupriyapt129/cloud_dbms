@@ -55,8 +55,16 @@ function changeView(view) {
         } else {
              fetchFolders(true);
         }
+    } else if (view === 'recent') {
+        grid.innerHTML = '';
+        document.getElementById('file-panel').style.display = 'block';
+        document.getElementById('folder-breadcrumb').style.display = 'flex';
+        document.getElementById('open-folder-name').textContent = 'Recent (Last 24h)';
+        document.querySelector('#folder-breadcrumb .fa-folder').className = 'fa-solid fa-clock-rotate-left';
+        
+        fetchFiles(null, 'recent');
     } else {
-        // For Shared/Recent/Trash - we show a placeholder for now
+        // For Shared/Trash - we show a placeholder for now
         grid.innerHTML = `
             <div class="placeholder-view" style="grid-column: 1 / -1; text-align:center; padding: 60px 0;">
                 <i class="fa-solid fa-hourglass-half" style="font-size: 4rem; color: var(--border); margin-bottom: 20px; display:block;"></i>
@@ -370,19 +378,23 @@ function closeFolder() {
     currentFolderId = null;
 }
 
-async function fetchFiles(folderId = currentFolderId) {
+async function fetchFiles(folderId = currentFolderId, filterType = null) {
     currentFolderId = folderId;
     const tbody = document.getElementById('file-list');
     const emptyState = document.getElementById('file-empty-state');
     if (!tbody) return;
 
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
-        <i class="fa-solid fa-spinner fa-spin"></i> Loading files...
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
     </td></tr>`;
     if (emptyState) emptyState.style.display = 'none';
 
     try {
-        const res = await authFetch(`${API_BASE}/files?folder_id=${folderId}`);
+        let url = `${API_BASE}/files?t=${Date.now()}`;
+        if (folderId && folderId !== 'null' && folderId !== null) url += `&folder_id=${folderId}`;
+        if (filterType) url += `&filter=${filterType}`;
+
+        const res = await authFetch(url);
         const result = await res.json();
 
         if (result.status === 'success') {

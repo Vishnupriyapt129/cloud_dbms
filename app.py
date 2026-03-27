@@ -195,14 +195,25 @@ def get_files():
         else:
             cursor.execute(base_sql + " ORDER BY f.uploaddate DESC")
     else:
-        if folder_id and folder_id != 'undefined':
-            cursor.execute(base_sql + " WHERE f.owner_id = %s AND f.folder_id = %s ORDER BY f.uploaddate DESC", (user_id, folder_id))
-        # Add limit support for Recent Files view
+        # Handle filters (like 'recent' for last 24h)
+        filter_type = request.args.get('filter')
         limit = request.args.get('limit')
+        
+        where_clauses = ["f.owner_id = %s"]
+        params = [user_id]
+        
+        if folder_id and folder_id != 'undefined':
+            where_clauses.append("f.folder_id = %s")
+            params.append(folder_id)
+            
+        if filter_type == 'recent':
+            where_clauses.append("f.uploaddate >= DATE_SUB(NOW(), INTERVAL 1 DAY)")
+
+        sql = base_sql + " WHERE " + " AND ".join(where_clauses) + " ORDER BY f.uploaddate DESC"
         if limit and limit.isdigit():
-            cursor.execute(base_sql + f" WHERE f.owner_id = %s ORDER BY f.uploaddate DESC LIMIT {int(limit)}", (user_id,))
-        else:
-            cursor.execute(base_sql + " WHERE f.owner_id = %s ORDER BY f.uploaddate DESC", (user_id,))
+            sql += f" LIMIT {int(limit)}"
+            
+        cursor.execute(sql, tuple(params))
 
     files = cursor.fetchall()
     for f in files:
