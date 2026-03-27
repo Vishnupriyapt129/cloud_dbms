@@ -48,13 +48,7 @@ function changeView(view) {
     if (view === 'home' || view === 'folders') {
         closeFolder(); // Switch to grid view
         document.getElementById('welcome-message').textContent = view === 'home' ? 'Vault Access' : 'Cloud Folders';
-        
-        if (view === 'home') {
-             fetchRecentFilesForHome();
-             fetchFolders(false);
-        } else {
-             fetchFolders(true);
-        }
+        fetchFolders(true);
     } else if (view === 'recent') {
         grid.innerHTML = '';
         document.getElementById('file-panel').style.display = 'none'; // No table
