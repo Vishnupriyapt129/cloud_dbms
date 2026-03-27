@@ -122,20 +122,31 @@ def get_user_profile():
 @app.route('/api/folders', methods=['GET'])
 def get_folders():
     user_id = int(request.headers.get('Authorization', 1) or 1)
+    # Check if admin is requesting another user's folders
+    owner_id_param = request.args.get('owner_id')
+    
     conn = get_db_connection()
-    if not conn:
-        return jsonify({"status": "error", "message": "DB Error"}), 500
-
+    if not conn: return jsonify({"status": "error", "message": "DB"}), 500
     cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
+    # Check role
+    cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    is_admin = u and u['role'] == 'admin'
+    
+    target_user = user_id
+    if is_admin and owner_id_param:
+        target_user = owner_id_param
+
     cursor.execute(
-        "SELECT folder_id AS id, foldername AS name, color FROM folders WHERE created_by = %s",
-        (user_id,)
+        "SELECT folder_id AS id, foldername AS name, color, createdat AS created_at FROM folders WHERE created_by = %s",
+        (target_user,)
     )
     folders = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    formatted = [{"id": str(f['id']), "name": f['name'], "color": f['color']} for f in folders]
+    formatted = [{"id": str(f['id']), "name": f['name'], "color": f['color'], "created_at": f['created_at']} for f in folders]
     return jsonify({"status": "success", "data": formatted}), 200
 
 

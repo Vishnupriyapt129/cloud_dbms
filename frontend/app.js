@@ -704,91 +704,87 @@ async function fetchAdminUsersList() {
     }
 }
 
-async function fetchAdminFiles() {
-    const ownerId = document.getElementById('admin-user-filter')?.value || 'all';
-    const q       = document.getElementById('admin-file-search')?.value?.trim() || '';
-    const tbody   = document.getElementById('admin-file-list');
-    const empty   = document.getElementById('admin-files-empty');
-    const badge   = document.getElementById('admin-files-count');
+let currentAdminTargetId = 'all';
 
-    if (!tbody) return;
-
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">
-        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
-    </td></tr>`;
-    if (empty) empty.style.display = 'none';
+async function fetchAdminUsersList() {
+    const grid = document.getElementById('admin-user-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = '<div style="color:var(--text-muted); grid-column:1/-1;">Loading Users...</div>';
 
     try {
-        const params = new URLSearchParams({ owner_id: ownerId, q });
+        const res = await authFetch(`${API_BASE}/admin/users-list`);
+        const result = await res.json();
+        if (result.status !== 'success') return;
+
+        grid.innerHTML = '';
+        result.data.forEach(user => {
+            const card = document.createElement('div');
+            card.className = 'folder-card';
+            card.style.cssText = 'padding:15px; border-radius:12px; transition:0.3s;';
+            card.innerHTML = `
+                <div style="font-size:2rem; color:var(--primary); margin-bottom:8px; opacity:0.8;"><i class="fa-solid fa-folder-user"></i></div>
+                <div style="font-weight:700; font-size:0.85rem; color:white;">${user.name}</div>
+                <div style="font-size:0.65rem; color:var(--text-muted);">${user.file_count} items</div>
+            `;
+            card.onclick = () => exploreAdminUser(user.id, user.name);
+            grid.appendChild(card);
+        });
+    } catch (e) { console.error('Admin user list fetch failed', e); }
+}
+
+function exploreAdminUser(uid, name) {
+    currentAdminTargetId = uid;
+    document.getElementById('admin-user-grid').style.display = 'none';
+    const secondary = document.getElementById('admin-secondary-actions');
+    secondary.style.display = 'block';
+    document.getElementById('admin-current-target-name').textContent = `Exploring: ${name}`;
+    fetchAdminFiles(); // Re-fetch only this user's files
+}
+
+function showAdminUserGrid() {
+    currentAdminTargetId = 'all';
+    document.getElementById('admin-user-grid').style.display = 'grid';
+    document.getElementById('admin-secondary-actions').style.display = 'none';
+}
+
+async function fetchAdminFiles() {
+    const ownerId = currentAdminTargetId;
+    const tbody   = document.getElementById('admin-file-list');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<div style="color:var(--text-muted); padding:20px;">Fetching...</div>';
+
+    try {
+        const params = new URLSearchParams({ owner_id: ownerId });
         const res = await authFetch(`${API_BASE}/admin/files?${params}`);
         const result = await res.json();
-
-        if (result.status !== 'success') {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#e74c3c;">
-                Failed to load files: ${result.message}
-            </td></tr>`;
-            return;
-        }
+        if (result.status !== 'success') return;
 
         const files = result.data;
-        if (badge) badge.textContent = files.length;
         tbody.innerHTML = '';
 
         if (files.length === 0) {
-            tbody.innerHTML = '';
-            if (empty) empty.style.display = 'block';
+            tbody.innerHTML = '<div style="padding:20px; color:var(--text-muted);">No files found for this user.</div>';
             return;
         }
 
         files.forEach(file => {
-            // Colour coding by type
-            const iconMap = {
-                'PDF':        ['bg-pdf',        'fa-file-pdf'],
-                'Excel':      ['bg-excel',       'fa-file-excel'],
-                'PowerPoint': ['bg-powerpoint',  'fa-file-powerpoint'],
-                'Text':       ['bg-text',        'fa-file-lines'],
-                'Image':      ['bg-default',     'fa-file-image'],
-            };
-            const [bgClass, iClass] = iconMap[file.type] || ['bg-default', 'fa-file'];
-
-            const uid = getActiveUid();
-            const tr = document.createElement('tr');
+            const tr = document.createElement('div');
+            tr.className = 'mini-file-item';
             tr.innerHTML = `
-                <td>
-                    <div class="file-name-cell">
-                        <div class="file-icon ${bgClass}">
-                            <i class="fa-solid ${iClass}"></i>
-                        </div>
-                        <span title="${file.name}" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${file.name}</span>
-                    </div>
-                </td>
-                <td>
-                    <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(55,130,93,0.12);border:1px solid rgba(55,130,93,0.3);color:#37825d;padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;">
-                        <i class="fa-solid fa-user" style="font-size:0.75rem;"></i>${file.owner_name || '—'}
-                    </span>
-                </td>
-                <td>${file.type}</td>
-                <td>${file.size}</td>
-                <td>${file.date_modified}</td>
-                <td>
-                    <div class="file-actions" style="opacity:1;">
-                        <button class="action-btn" style="color:#3498db;" title="View / Download"
-                            onclick="handleDownloadFile('${file.id}')">
-                            <i class="fa-solid fa-download"></i>
-                        </button>
-                        </button>
-                    </div>
-                </td>
+                <i class="fa-solid ${getFileIconClass(file.type).split(' ')[1]}"></i>
+                <span>${file.name}</span>
+                <button onclick="handleDownloadFile('${file.id}')"><i class="fa-solid fa-download"></i></button>
             `;
             tbody.appendChild(tr);
         });
     } catch (e) {
-        console.error('fetchAdminFiles error', e);
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#e74c3c;">
-            Server unreachable. Is Flask running?
-        </td></tr>`;
+        console.error('Admin file list error', e);
+        tbody.innerHTML = '<div style="color:var(--primary);">Server error</div>';
     }
 }
+
 
 // ────────────────────────────────────────────────────────────────────────────
 

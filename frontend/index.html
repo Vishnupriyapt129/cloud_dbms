@@ -137,11 +137,14 @@
                     <aside class="activity-panel">
                         <!-- Admin Global Only -->
                         <div id="admin-file-manager-panel" class="admin-card" style="display:none;">
-                            <h3><i class="fa-solid fa-shield-halved"></i> Master Control</h3>
-                            <select id="admin-user-filter" onchange="fetchAdminFiles()">
-                                <option value="all">All Users</option>
-                            </select>
-                            <div id="admin-file-list" class="mini-files"></div>
+                            <h3><i class="fa-solid fa-users-viewfinder"></i> User Directory</h3>
+                            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:15px;">Double-click a user to explore their folders and files.</p>
+                            <div id="admin-user-grid" class="modern-grid" style="gap:15px;"></div>
+                            <div id="admin-secondary-actions" style="margin-top:20px; border-top:1px solid var(--border); padding-top:10px; display:none;">
+                                <button class="btn btn-sm" onclick="showAdminUserGrid()"><i class="fa-solid fa-chevron-left"></i> All Users</button>
+                                <h4 id="admin-current-target-name" style="margin:10px 0; color:var(--primary);"></h4>
+                                <div id="admin-file-list" class="mini-files"></div>
+                            </div>
                         </div>
 
 

@@ -580,3 +580,36 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.1);
 }
+
+/* ADMIN USER DIRECTORY */
+#admin-user-grid .folder-card {
+    cursor: pointer;
+    text-align: center;
+}
+
+#admin-user-grid .folder-card:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+}
+
+.mini-file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+}
+
+.mini-file-item:last-child { border-bottom: none; }
+.mini-file-item i { color: var(--primary); width: 22px; text-align:center; }
+.mini-file-item span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-base); }
+.mini-file-item button {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: 0.2s;
+    padding: 4px 8px;
+}
+.mini-file-item button:hover { color: var(--primary); transform: scale(1.1); }
