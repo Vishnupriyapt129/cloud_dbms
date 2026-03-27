@@ -696,9 +696,16 @@ body::after {
 
 .progress-fill {
     height: 100%;
-    background: var(--purple-main);
+    background: linear-gradient(90deg, var(--purple-main), #1dd1a1, var(--purple-accent), var(--purple-main));
+    background-size: 200% 100%;
     border-radius: 5px;
     transition: width 1s cubic-bezier(0.25, 0.8, 0.25, 1);
+    animation: progressWave 2s linear infinite;
+}
+
+@keyframes progressWave {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
 }
 
 /* Right Column */
