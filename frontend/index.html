@@ -54,71 +54,93 @@
                     <h1 id="welcome-message">Welcome!</h1>
                     <p>Your Cloud Storage Dashboard</p>
                 </div>
-                <div class="header-actions">
-                    <input type="file" id="file-upload-input" style="display: none;" onchange="handleFileUpload(event)">
-                    <button class="btn btn-primary" onclick="document.getElementById('file-upload-input').click()">
-                        Upload File <i class="fa-solid fa-cloud-arrow-up"></i>
-                    </button>
-                    <button class="btn btn-white" onclick="handleNewFolder()">
-                        <i class="fa-solid fa-folder-plus"></i> New Folder
-                    </button>
-                </div>
             </header>
 
             <div class="grid-container">
-                <!-- LEFT COLUMN -->
+                <!-- LEFT COLUMN — Folder Browser -->
                 <div class="left-col">
 
-                    <!-- FOLDERS -->
-                    <section class="glass-panel folder-section">
-                        <div class="breadcrumbs">
-                            <i class="fa-solid fa-house"></i> Work Files <span class="divider">|</span> Project A <i
-                                class="fa-solid fa-chevron-down"></i>
-                        </div>
-                        <div class="folder-list" id="folder-list">
-                            <!-- Folders injected via JS -->
-                        </div>
-                    </section>
-
-                    <!-- FILE MANAGER -->
-                    <section class="card file-manager">
-                        <div class="card-header">
+                    <!-- FOLDER BROWSER CARD -->
+                    <section class="card folder-browser" id="folder-browser-card">
+                        <!-- Header: title + New Folder + Upload (upload shown only when folder selected) -->
+                        <div class="card-header" style="flex-wrap:wrap; gap:12px;">
                             <div class="card-title">
-                                <i class="fa-solid fa-folder"></i> File Manager
+                                <i class="fa-solid fa-folder-open"></i>
+                                <span id="browser-title">My Folders</span>
                             </div>
-                            <div class="card-tools">
-                                <button class="icon-btn active"><i class="fa-solid fa-list"></i></button>
-                                <button class="icon-btn"><i class="fa-solid fa-grid-2"></i></button>
-                                <button class="icon-btn"><i class="fa-solid fa-gear"></i></button>
-                                <button class="icon-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                            <div style="display:flex;gap:10px;align-items:center;">
+                                <!-- Upload: hidden until a folder is selected -->
+                                <div id="upload-area" style="display:none;">
+                                    <input type="file" id="file-upload-input" style="display:none;" onchange="handleFileUpload(event)">
+                                    <button class="btn btn-primary" id="upload-btn"
+                                        onclick="document.getElementById('file-upload-input').click()"
+                                        style="padding:9px 18px;font-size:0.9rem;">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload File
+                                    </button>
+                                </div>
+                                <button class="btn btn-white" onclick="handleNewFolder()"
+                                    id="new-folder-btn" style="padding:9px 18px;font-size:0.9rem;">
+                                    <i class="fa-solid fa-folder-plus"></i> New Folder
+                                </button>
                             </div>
                         </div>
-                        <div class="table-responsive">
-                            <table class="file-table">
-                                <thead>
-                                    <tr>
-                                        <th>File Name</th>
-                                        <th>Type</th>
-                                        <th>Size</th>
-                                        <th>Date Modified</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="file-list">
-                                    <!-- Files injected via JS -->
-                                </tbody>
-                            </table>
+
+                        <!-- Breadcrumb / back navigation -->
+                        <div id="folder-breadcrumb" style="display:none; align-items:center; gap:8px;
+                             padding:10px 0 14px; border-bottom:1px solid #edf2f7; margin-bottom:16px;
+                             font-size:0.95rem; color:var(--text-muted);">
+                            <button onclick="closeFolder()" style="background:none;border:none;cursor:pointer;
+                                color:var(--purple-dark);font-size:0.9rem;font-weight:600;display:flex;align-items:center;gap:6px;padding:0;">
+                                <i class="fa-solid fa-arrow-left"></i> Back to Folders
+                            </button>
+                            <span style="opacity:0.4;">|</span>
+                            <i class="fa-solid fa-folder" style="color:#ffa502;"></i>
+                            <span id="open-folder-name" style="font-weight:600;color:var(--text-dark);"></span>
                         </div>
+
+                        <!-- FOLDER GRID — shown when no folder open -->
+                        <div id="folder-grid" class="folder-grid-view">
+                            <!-- Folder cards injected by JS -->
+                        </div>
+
+                        <!-- FILE LIST — shown when a folder is open -->
+                        <div id="file-panel" style="display:none;">
+                            <div class="table-responsive">
+                                <table class="file-table">
+                                    <thead>
+                                        <tr>
+                                            <th>File Name</th>
+                                            <th>Type</th>
+                                            <th>Size</th>
+                                            <th>Date Modified</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="file-list">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Empty state -->
+                            <div id="file-empty-state" style="display:none;text-align:center;
+                                 padding:40px 20px;color:var(--text-muted);">
+                                <i class="fa-solid fa-file-circle-plus"
+                                   style="font-size:2.5rem;display:block;margin-bottom:12px;opacity:0.35;"></i>
+                                <p style="font-weight:500;margin-bottom:8px;">This folder is empty</p>
+                                <p style="font-size:0.85rem;opacity:0.7;">Click <strong>Upload File</strong> to add files here.</p>
+                            </div>
+                        </div>
+
                         <!-- STORAGE BAR -->
-                        <div class="storage-section">
+                        <div class="storage-section" style="margin-top:20px;padding-top:18px;border-top:1px solid #edf2f7;">
                             <div class="storage-text" id="storage-text">Storage Used: Loading...</div>
                             <div class="progress-bar">
-                                <div class="progress-fill" id="storage-fill" style="width: 0%"></div>
+                                <div class="progress-fill" id="storage-fill" style="width:0%"></div>
                             </div>
                         </div>
                     </section>
 
                 </div><!-- /left-col -->
+
 
                 <!-- RIGHT COLUMN -->
                 <div class="right-col">
