@@ -48,21 +48,22 @@ function changeView(view) {
     if (view === 'home' || view === 'folders') {
         closeFolder(); // Switch to grid view
         document.getElementById('welcome-message').textContent = view === 'home' ? 'Vault Access' : 'Cloud Folders';
+        document.getElementById('action-area').style.display = 'flex';
         fetchFolders(true);
     } else if (view === 'recent') {
         grid.innerHTML = '';
-        document.getElementById('file-panel').style.display = 'none'; // No table
-        document.getElementById('folder-breadcrumb').style.display = 'none'; // No breadcrumb needed
+        document.getElementById('file-panel').style.display = 'none';
+        document.getElementById('folder-breadcrumb').style.display = 'none';
         document.getElementById('welcome-message').textContent = 'Recent Activity (Last 24h)';
+        document.getElementById('action-area').style.display = 'none'; // No context to upload here
         
         fetchRecentOnlyGrid();
     } else {
-        // For Shared/Trash - we show a placeholder for now
+        document.getElementById('action-area').style.display = 'none';
         grid.innerHTML = `
             <div class="placeholder-view" style="grid-column: 1 / -1; text-align:center; padding: 60px 0;">
                 <i class="fa-solid fa-hourglass-half" style="font-size: 4rem; color: var(--border); margin-bottom: 20px; display:block;"></i>
                 <h2 style="color: var(--text-muted);">${view.toUpperCase()} view coming soon</h2>
-                <p style="opacity:0.5;">This module is being integrated with your cloud instance.</p>
                 <button class="btn btn-accent" style="margin: 20px auto;" onclick="changeView('home')">Return Home</button>
             </div>
         `;
@@ -833,31 +834,6 @@ async function handleRequestAction(reqId, action) {
             }
         }
     });
-}
-
-async function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder_id', currentFolderId);
-
-    try {
-        const res = await authFetch(`${API_BASE}/files/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-            fetchFiles(); 
-            fetchActivityLogs();
-            fetchUserData();
-            showToast("success", "File uploaded successfully!");
-        }
-    } catch (e) {
-        console.error("Upload failed", e);
-    }
 }
 
 function handleDownloadFile(fileId) {

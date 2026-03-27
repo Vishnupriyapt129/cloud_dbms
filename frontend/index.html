@@ -93,9 +93,9 @@
                         <h1 id="welcome-message">Vault Access</h1>
                         <p>Manage your secure cloud assets here.</p>
                     </div>
-                    <div class="quick-btns">
-                        <button class="btn btn-primary" onclick="handleNewFolder()"><i class="fa-solid fa-plus"></i> New Folder</button>
-                        <button class="btn btn-accent" onclick="triggerFileUpload()"><i class="fa-solid fa-upload"></i> Upload</button>
+                    <div class="quick-btns" id="action-area">
+                        <button class="btn btn-primary" id="create-folder-btn" onclick="handleNewFolder()"><i class="fa-solid fa-plus"></i> New Folder</button>
+                        <button class="btn btn-accent" id="upload-btn" onclick="triggerFileUpload()"><i class="fa-solid fa-upload"></i> Upload</button>
                         <input type="file" id="file-upload-input" style="display:none;" onchange="handleFileUpload(event)">
                     </div>
                 </section>
