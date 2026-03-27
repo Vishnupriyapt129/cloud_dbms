@@ -990,19 +990,54 @@ function showToast(type, message) {
     }, 4500);
 }
 
-// Global Drag and Drop Uploader Overrides
-document.addEventListener('DOMContentLoaded', () => {
-    let overlay = document.createElement('div');
-    overlay.className = 'drag-overlay';
-    overlay.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Drop file to upload';
-    document.body.appendChild(overlay);
+/* UPLOAD LOGIC */
+function triggerFileUpload() {
+    if (!currentFolderId) {
+        showToast('warning', 'Please select a folder first!');
+        return;
+    }
+    document.getElementById('file-upload-input').click();
+}
 
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if(!file || !currentFolderId) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder_id', currentFolderId);
+
+    showToast('info', `Uploading ${file.name}...`);
+    try {
+        const res = await authFetch(`${API_BASE}/files/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            fetchFiles(); 
+            fetchActivityLogs();
+            fetchUserData();
+            showToast('success', `${file.name} uploaded successfully!`);
+        } else {
+            showToast('error', result.message || 'Upload failed');
+        }
+    } catch (err) {
+        showToast('error', 'Network error during upload');
+    } finally {
+        event.target.value = '';
+    }
+}
+
+// Global Drag and Drop Uploader
+document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('drag-overlay');
     let dragTimer;
+
+    if (!overlay) return;
 
     document.addEventListener('dragover', (e) => {
         e.preventDefault();
-        if(!currentFolderId) return; // Only allow drop if a folder is open
-        
         const dt = e.dataTransfer;
         if (dt.types && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.includes('Files'))) {
             overlay.classList.add('active');
@@ -1020,10 +1055,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('drop', async (e) => {
         e.preventDefault();
         overlay.classList.remove('active');
-        if(!currentFolderId) return;
         
+        if (!currentFolderId) {
+            showToast('warning', 'Please select a folder first!');
+            return;
+        }
+
         let files = e.dataTransfer.files;
-        if(files.length > 0) {
+        if (files.length > 0) {
             const file = files[0];
             const formData = new FormData();
             formData.append('file', file);
