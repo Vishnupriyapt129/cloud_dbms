@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchUserData();
     checkApprovalStatus();
     fetchFolders();
-    fetchFiles();
+    // fetchFiles() is now called only when a folder is opened
     fetchAccessControl();
     fetchActivityLogs();
     fetchAdminRequests();
@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAdminUsersList();
         fetchAdminFiles();
     }
-    setupTabs();
     setupProfileDropdown();
 });
 
@@ -166,58 +165,113 @@ async function fetchFolders() {
 
         if (result.status === 'success') {
             const folders = result.data;
-            const container = document.getElementById('folder-list');
-            container.innerHTML = ''; // clear loading text
+            const grid = document.getElementById('folder-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
 
-            folders.forEach((folder) => {
-                const div = document.createElement('div');
-                div.className = 'folder-item';
-                
-                // Keep the visual styling synced with the actual selected folder ID
-                if (folder.id === currentFolderId) {
-                    div.classList.add('active-folder');
-                    document.querySelector('.breadcrumbs').innerHTML = `<i class="fa-solid fa-house"></i> ${folder.name} <span class="divider">|</span> Directory <i class="fa-solid fa-chevron-down"></i>`;
-                }
-                
-                div.innerHTML = `
-                    <div class="folder-icon"><i class="fa-solid fa-folder"></i></div>
-                    <div class="folder-name">${folder.name}</div>
+            if (folders.length === 0) {
+                grid.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+                    <i class="fa-solid fa-folder-open" style="font-size:2.5rem;display:block;margin-bottom:12px;opacity:0.35;"></i>
+                    <p style="font-weight:500;">No folders yet</p>
+                    <p style="font-size:0.85rem;opacity:0.7;">Click <strong>New Folder</strong> to create your first folder.</p>
+                </div>`;
+                return;
+            }
+
+            folders.forEach(folder => {
+                const colorMap = { yellow:'#ffa502', blue:'#3498db', green:'#2ecc71', red:'#e74c3c', purple:'#9b59b6', gray:'#95a5a6' };
+                const folderColor = colorMap[folder.color] || '#ffa502';
+                const card = document.createElement('div');
+                card.className = 'folder-card';
+                card.dataset.folderId = folder.id;
+                card.innerHTML = `
+                    <div class="folder-card-icon" style="color:${folderColor};">
+                        <i class="fa-solid fa-folder"></i>
+                    </div>
+                    <div class="folder-card-name">${folder.name}</div>
+                    <div class="folder-card-meta">
+                        <i class="fa-regular fa-clock" style="font-size:0.7rem;"></i>
+                        ${folder.created_at || 'Recent'}
+                    </div>
                 `;
-                
-                // Add click listener to act as tabs
-                div.addEventListener('click', () => {
-                    document.querySelectorAll('.folder-item').forEach(el => el.classList.remove('active-folder'));
-                    div.classList.add('active-folder');
-                    
-                    document.querySelector('.breadcrumbs').innerHTML = `<i class="fa-solid fa-house"></i> ${folder.name} <span class="divider">|</span> Directory <i class="fa-solid fa-chevron-down"></i>`;
-                    
-                    fetchFiles(folder.id);
-                });
-                
-                container.appendChild(div);
+                card.addEventListener('click', () => openFolder(folder.id, folder.name, folderColor));
+                grid.appendChild(card);
             });
         }
     } catch (error) {
-        console.error("Error fetching folders:", error);
+        console.error('Error fetching folders:', error);
     }
+}
+
+function openFolder(folderId, folderName, folderColor = '#ffa502') {
+    currentFolderId = folderId;
+
+    // Switch views
+    document.getElementById('folder-grid').style.display = 'none';
+    document.getElementById('file-panel').style.display = 'block';
+
+    // Show breadcrumb
+    const bc = document.getElementById('folder-breadcrumb');
+    bc.style.display = 'flex';
+    document.getElementById('open-folder-name').textContent = folderName;
+    document.querySelector('#folder-breadcrumb .fa-folder').style.color = folderColor;
+
+    // Update header title
+    document.getElementById('browser-title').textContent = folderName;
+
+    // Show upload button
+    const uploadArea = document.getElementById('upload-area');
+    if (uploadArea) uploadArea.style.display = 'block';
+
+    fetchFiles(folderId);
+}
+
+function closeFolder() {
+    // Switch back to grid
+    document.getElementById('folder-grid').style.display = '';
+    document.getElementById('file-panel').style.display = 'none';
+    document.getElementById('folder-breadcrumb').style.display = 'none';
+    document.getElementById('browser-title').textContent = 'My Folders';
+
+    // Hide upload button
+    const uploadArea = document.getElementById('upload-area');
+    if (uploadArea) uploadArea.style.display = 'none';
+
+    // Clear file list
+    const tbody = document.getElementById('file-list');
+    if (tbody) tbody.innerHTML = '';
+    currentFolderId = null;
 }
 
 async function fetchFiles(folderId = currentFolderId) {
     currentFolderId = folderId;
+    const tbody = document.getElementById('file-list');
+    const emptyState = document.getElementById('file-empty-state');
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading files...
+    </td></tr>`;
+    if (emptyState) emptyState.style.display = 'none';
+
     try {
         const res = await authFetch(`${API_BASE}/files?folder_id=${folderId}`);
         const result = await res.json();
 
         if (result.status === 'success') {
             const files = result.data;
-            const tbody = document.getElementById('file-list');
-            tbody.innerHTML = ''; // clear loading text
+            tbody.innerHTML = '';
+
+            if (files.length === 0) {
+                if (emptyState) emptyState.style.display = 'block';
+                return;
+            }
 
             files.forEach(file => {
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
                 tr.onclick = (e) => {
-                    if(e.target.closest('.action-btn')) return;
+                    if (e.target.closest('.action-btn')) return;
                     currentFileId = file.id;
                     fetchAccessControl(file.id);
                 };
@@ -225,21 +279,13 @@ async function fetchFiles(folderId = currentFolderId) {
                 const bgClass = classes[0];
                 const iClass = classes[1];
 
-                let ownerHtml = '';
-                if (file.owner_name && localStorage.getItem('cloudhub_role') === 'admin') {
-                    ownerHtml = `<div style="font-size: 0.75rem; color: #888;">by ${file.owner_name}</div>`;
-                }
-
                 tr.innerHTML = `
                     <td>
                         <div class="file-name-cell">
                             <div class="file-icon ${bgClass}">
                                 <i class="fa-solid ${iClass}"></i>
                             </div>
-                            <div style="display:flex; flex-direction:column; justify-content:center;">
-                                <span>${file.name}</span>
-                                ${ownerHtml}
-                            </div>
+                            <span>${file.name}</span>
                         </div>
                     </td>
                     <td>${file.type}</td>
@@ -247,8 +293,14 @@ async function fetchFiles(folderId = currentFolderId) {
                     <td>${file.date_modified}</td>
                     <td>
                         <div class="file-actions">
-                            <button class="action-btn" style="color: #3498db; ${window.cloudhubIsPending ? 'display:none;' : ''}" onclick="handleDownloadFile('${file.id}')" title="Download"><i class="fa-solid fa-download"></i></button>
-                            <button class="action-btn" style="color: #e74c3c; ${window.cloudhubIsPending ? 'display:none;' : ''}" onclick="handleDeleteFile('${file.id}')"><i class="fa-solid fa-trash"></i></button>
+                            <button class="action-btn" style="color:#3498db;" title="Download"
+                                onclick="handleDownloadFile('${file.id}')">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                            <button class="action-btn" style="color:#e74c3c;" title="Delete"
+                                onclick="handleDeleteFile('${file.id}')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                     </td>
                 `;
@@ -256,7 +308,8 @@ async function fetchFiles(folderId = currentFolderId) {
             });
         }
     } catch (error) {
-        console.error("Error fetching files:", error);
+        console.error('Error fetching files:', error);
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#e74c3c;">Failed to load files.</td></tr>`;
     }
 }
 
@@ -564,9 +617,6 @@ async function fetchAdminFiles() {
                             onclick="handleDownloadFile('${file.id}')">
                             <i class="fa-solid fa-download"></i>
                         </button>
-                        <button class="action-btn" style="color:#e74c3c;" title="Delete"
-                            onclick="handleAdminDeleteFile('${file.id}', '${file.name.replace(/'/g, "\\'")}')">
-                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
                 </td>
@@ -579,30 +629,6 @@ async function fetchAdminFiles() {
             Server unreachable. Is Flask running?
         </td></tr>`;
     }
-}
-
-function handleAdminDeleteFile(fileId, fileName) {
-    showModal({
-        title: 'Delete File',
-        desc: `Permanently delete "${fileName}" from the platform? This action cannot be undone.`,
-        showInput: false,
-        onConfirm: async () => {
-            try {
-                const res = await authFetch(`${API_BASE}/files/${fileId}`, { method: 'DELETE' });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    fetchAdminFiles();
-                    fetchFiles();
-                    fetchActivityLogs();
-                    fetchUserData();
-                } else {
-                    showModal({ title: 'Delete Error', desc: result.message, showInput: false, onConfirm: () => {} });
-                }
-            } catch(e) {
-                console.error('Admin delete failed', e);
-            }
-        }
-    });
 }
 
 // ────────────────────────────────────────────────────────────────────────────
