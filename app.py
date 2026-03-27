@@ -4,6 +4,11 @@ from datetime import datetime
 import pymysql
 import pymysql.cursors
 import os
+from werkzeug.utils import secure_filename
+from flask import send_from_directory
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = Flask(__name__, template_folder='frontend', static_folder='frontend', static_url_path='')
 CORS(app)
@@ -44,6 +49,7 @@ DB_CONFIG = {
 def get_db_connection():
     try:
         connection = pymysql.connect(**DB_CONFIG)
+        print("✅ DB Connected")
         return connection
     except pymysql.MySQLError as e:
         print(f"Error connecting to MySQL: {e}")
@@ -171,15 +177,28 @@ def get_files():
         return jsonify({"status": "error", "message": "DB Error"}), 500
 
     cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
+    cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    is_admin = u and u['role'] == 'admin'
+
     base_sql = (
-        "SELECT file_id AS id, filename AS name, filetype AS type, filesize AS size, "
-        "uploaddate AS date_raw, icon "
-        "FROM files WHERE owner_id = %s"
+        "SELECT f.file_id AS id, f.filename AS name, f.filetype AS type, f.filesize AS size, "
+        "f.uploaddate AS date_raw, f.icon, u2.username as owner_name "
+        "FROM files f "
+        "LEFT JOIN users u2 ON f.owner_id = u2.user_id"
     )
-    if folder_id and folder_id != 'undefined':
-        cursor.execute(base_sql + " AND folder_id = %s ORDER BY uploaddate DESC", (user_id, folder_id))
+
+    if is_admin:
+        if folder_id and folder_id != 'undefined':
+            cursor.execute(base_sql + " WHERE f.folder_id = %s ORDER BY f.uploaddate DESC", (folder_id,))
+        else:
+            cursor.execute(base_sql + " ORDER BY f.uploaddate DESC")
     else:
-        cursor.execute(base_sql + " ORDER BY uploaddate DESC", (user_id,))
+        if folder_id and folder_id != 'undefined':
+            cursor.execute(base_sql + " WHERE f.owner_id = %s AND f.folder_id = %s ORDER BY f.uploaddate DESC", (user_id, folder_id))
+        else:
+            cursor.execute(base_sql + " WHERE f.owner_id = %s ORDER BY f.uploaddate DESC", (user_id,))
 
     files = cursor.fetchall()
     for f in files:
@@ -233,29 +252,143 @@ def upload_file():
     if not conn:
         return jsonify({"status": "error", "message": "DB Error"}), 500
 
+    # Read the file bytes before saving — needed for DB BLOB storage
+    file_bytes = file.read()
+    file.seek(0)
+
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO files (filename, filetype, filesize, icon, folder_id, owner_id) "
-        "VALUES (%s, %s, %s, %s, %s, %s)",
-        (file.filename, type_str, size_str, icon_str, folder_id, user_id)
+        "INSERT INTO files (filename, filetype, filesize, icon, folder_id, owner_id, file_data) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        (file.filename, type_str, size_str, icon_str, folder_id, user_id, file_bytes)
     )
     new_file_id = cursor.lastrowid
+
+    # Also attempt to save physically (local dev / if disk persists)
+    try:
+        filename = secure_filename(file.filename)
+        if not filename:
+            filename = "unnamed_file"
+        save_path = os.path.join(UPLOAD_FOLDER, f"{new_file_id}_{filename}")
+        with open(save_path, 'wb') as fout:
+            fout.write(file_bytes)
+    except Exception as e:
+        print(f"Filesystem save skipped (OK on Render): {e}")
+
     cursor.execute(
         "INSERT INTO activity_log (user_id, action, file_id, action_desc, action_icon) VALUES (%s, %s, %s, %s, %s)",
         (user_id, 'uploaded', new_file_id, file.filename, 'upload')
     )
-    
+
     # Update storage usage
     size_gb = size_bytes / (1024 * 1024 * 1024)
     cursor.execute(
         "UPDATE users SET storage_used_gb = storage_used_gb + %s WHERE user_id = %s",
         (size_gb, user_id)
     )
-    
+
     conn.commit()
     cursor.close()
     conn.close()
     return jsonify({"status": "success", "message": "File uploaded."}), 201
+
+@app.route('/api/files/download/<int:file_id>', methods=['GET'])
+def download_file(file_id):
+    user_id = int(request.args.get('uid', 1))
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    is_admin = u and u['role'] == 'admin'
+
+    cursor.execute("SELECT filename, owner_id, file_data FROM files WHERE file_id = %s", (file_id,))
+    f = cursor.fetchone()
+    
+    if not f:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "File not found"}), 404
+        
+    cursor.execute("SELECT 1 FROM access_control WHERE file_id = %s AND user_id = %s", (file_id, user_id))
+    has_access = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not is_admin and f['owner_id'] != user_id and not has_access:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    orig_filename = f['filename']
+    filename = secure_filename(orig_filename)
+    if not filename:
+        filename = "unnamed_file"
+
+    import mimetypes
+    mime_type, _ = mimetypes.guess_type(filename)
+
+    # Decide inline vs attachment
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    blocked_inline_exts = {
+        'sql', 'py', 'js', 'sh', 'bat', 'cmd', 'ps1',
+        'rb', 'php', 'pl', 'html', 'htm', 'xml', 'json',
+        'env', 'ini', 'cfg', 'conf', 'yaml', 'yml', 'toml'
+    }
+    safe_inline_types = {
+        'application/pdf',
+        'image/jpeg', 'image/png', 'image/gif',
+        'image/webp', 'image/svg+xml', 'image/bmp',
+        'video/mp4', 'video/webm',
+        'audio/mpeg', 'audio/wav', 'audio/ogg'
+    }
+    is_safe_inline = mime_type in safe_inline_types and ext not in blocked_inline_exts
+
+    # ── PRIMARY: serve from DB BLOB (works on Render after restart) ──────────
+    file_data = f.get('file_data')
+    if file_data:
+        from flask import Response
+        data = bytes(file_data) if not isinstance(file_data, (bytes, bytearray)) else file_data
+        response = Response(
+            data,
+            mimetype=mime_type or 'application/octet-stream'
+        )
+        if is_safe_inline:
+            response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+        else:
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    # ── FALLBACK: try filesystem (legacy files / local dev) ──────────────────
+    file_path = os.path.join(UPLOAD_FOLDER, f"{file_id}_{filename}")
+    if os.path.exists(file_path):
+        if is_safe_inline:
+            from flask import Response
+            with open(file_path, 'rb') as fh:
+                data = fh.read()
+            response = Response(data, mimetype=mime_type)
+            response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+            return response
+        else:
+            return send_from_directory(UPLOAD_FOLDER, f"{file_id}_{filename}",
+                                       as_attachment=True, download_name=filename)
+
+    # ── NEITHER source available ─────────────────────────────────────────────
+    return f"""
+    <!DOCTYPE html><html><head><title>File Not Available</title>
+    <style>
+      body{{font-family:sans-serif;display:flex;align-items:center;justify-content:center;
+           height:100vh;margin:0;background:#1a1f2e;color:#ccc}}
+      .box{{text-align:center;padding:40px;background:#243046;border-radius:16px;border:1px solid #3a4a6a}}
+      h2{{color:#e74c3c;margin-bottom:12px}} p{{font-size:0.95rem;opacity:0.75}}
+    </style></head>
+    <body><div class="box"><h2>&#x26A0; File Not Available</h2>
+    <p>The file <strong>{orig_filename}</strong> was uploaded before persistent storage was enabled.</p>
+    <p style="margin-top:16px;font-size:0.8rem;">Please delete this entry and re-upload the file.</p>
+    </div></body></html>
+    """, 404
+
 
 @app.route('/api/files/<file_id>', methods=['DELETE'])
 def delete_file(file_id):
@@ -265,14 +398,23 @@ def delete_file(file_id):
         return jsonify({"status": "error", "message": "DB Error"}), 500
 
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    cursor.execute("SELECT filename, filesize FROM files WHERE file_id = %s AND owner_id = %s", (file_id, user_id))
+    
+    cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    is_admin = u and u['role'] == 'admin'
+
+    if is_admin:
+        cursor.execute("SELECT filename, filesize, owner_id FROM files WHERE file_id = %s", (file_id,))
+    else:
+        cursor.execute("SELECT filename, filesize, owner_id FROM files WHERE file_id = %s AND owner_id = %s", (file_id, user_id))
+        
     f = cursor.fetchone()
     if not f:
         cursor.close()
         conn.close()
         return jsonify({"status": "error", "message": "File not found or unauthorized to delete"}), 404
 
-    # Calculate and subtract storage
+    # Calculate and subtract storage from the owner
     size_str = f['filesize']
     size_gb = 0
     try:
@@ -287,9 +429,21 @@ def delete_file(file_id):
         pass
 
     if size_gb > 0:
-        cursor.execute("UPDATE users SET storage_used_gb = GREATEST(0.00, storage_used_gb - %s) WHERE user_id = %s", (size_gb, user_id))
+        cursor.execute("UPDATE users SET storage_used_gb = GREATEST(0.00, storage_used_gb - %s) WHERE user_id = %s", (size_gb, f['owner_id']))
 
     cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
+    
+    # Try deleting the physical file
+    try:
+        filename = secure_filename(f['filename'])
+        if not filename:
+            filename = "unnamed_file"
+        file_path = os.path.join(UPLOAD_FOLDER, f"{file_id}_{filename}")
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        print(f"Error removing physical file: {e}")
+        
     cursor.execute(
         "INSERT INTO activity_log (user_id, action, action_desc, action_icon) VALUES (%s, %s, %s, %s)",
         (user_id, 'deleted file', f['filename'], 'trash')
@@ -688,5 +842,94 @@ def manage_user_request(request_id, action):
     return jsonify({"status": "success", "message": f"Request {new_status}."}), 200
 
 
+# ---------------------------------------------------------
+# ADMIN — GLOBAL FILE MANAGER  (all files across all users)
+# ---------------------------------------------------------
+
+@app.route('/api/admin/files', methods=['GET'])
+def admin_get_all_files():
+    user_id = int(request.headers.get('Authorization', 1) or 1)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT role, email FROM users WHERE user_id = %s", (user_id,))
+    user = cursor.fetchone()
+
+    admin_emails = ['anushakpramod24@gmail.com', 'vishnupriyapt29@gmail.com']
+    if not user or user['role'] != 'admin' or user['email'] not in admin_emails:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    owner_filter = request.args.get('owner_id')
+    search_q     = request.args.get('q', '').strip()
+
+    sql = (
+        "SELECT f.file_id AS id, f.filename AS name, f.filetype AS type, "
+        "f.filesize AS size, f.uploaddate AS date_raw, f.icon, "
+        "u.user_id AS owner_id, u.username AS owner_name "
+        "FROM files f "
+        "LEFT JOIN users u ON f.owner_id = u.user_id"
+    )
+    conditions = []
+    params = []
+
+    if owner_filter and owner_filter != 'all':
+        conditions.append("f.owner_id = %s")
+        params.append(owner_filter)
+    if search_q:
+        conditions.append("f.filename LIKE %s")
+        params.append(f"%{search_q}%")
+
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+
+    sql += " ORDER BY f.uploaddate DESC"
+    cursor.execute(sql, params)
+    files = cursor.fetchall()
+
+    for f in files:
+        f['id'] = str(f['id'])
+        raw = f.pop('date_raw', None)
+        f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '—'
+
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "data": files}), 200
+
+
+@app.route('/api/admin/users-list', methods=['GET'])
+def admin_list_users():
+    user_id = int(request.headers.get('Authorization', 1) or 1)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT role, email FROM users WHERE user_id = %s", (user_id,))
+    user = cursor.fetchone()
+
+    admin_emails = ['anushakpramod24@gmail.com', 'vishnupriyapt29@gmail.com']
+    if not user or user['role'] != 'admin' or user['email'] not in admin_emails:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    cursor.execute(
+        "SELECT user_id AS id, username AS name, "
+        "(SELECT COUNT(*) FROM files WHERE owner_id = users.user_id) AS file_count "
+        "FROM users WHERE role = 'user' ORDER BY username ASC"
+    )
+    users = cursor.fetchall()
+    for u in users:
+        u['id'] = str(u['id'])
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "data": users}), 200
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+

@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchAccessControl();
     fetchActivityLogs();
     fetchAdminRequests();
+    if (role === 'admin') {
+        fetchAdminUsersList();
+        fetchAdminFiles();
+    }
     setupTabs();
     setupProfileDropdown();
 });
@@ -221,13 +225,21 @@ async function fetchFiles(folderId = currentFolderId) {
                 const bgClass = classes[0];
                 const iClass = classes[1];
 
+                let ownerHtml = '';
+                if (file.owner_name && localStorage.getItem('cloudhub_role') === 'admin') {
+                    ownerHtml = `<div style="font-size: 0.75rem; color: #888;">by ${file.owner_name}</div>`;
+                }
+
                 tr.innerHTML = `
                     <td>
                         <div class="file-name-cell">
                             <div class="file-icon ${bgClass}">
                                 <i class="fa-solid ${iClass}"></i>
                             </div>
-                            <span>${file.name}</span>
+                            <div style="display:flex; flex-direction:column; justify-content:center;">
+                                <span>${file.name}</span>
+                                ${ownerHtml}
+                            </div>
                         </div>
                     </td>
                     <td>${file.type}</td>
@@ -235,6 +247,7 @@ async function fetchFiles(folderId = currentFolderId) {
                     <td>${file.date_modified}</td>
                     <td>
                         <div class="file-actions">
+                            <button class="action-btn" style="color: #3498db; ${window.cloudhubIsPending ? 'display:none;' : ''}" onclick="handleDownloadFile('${file.id}')" title="Download"><i class="fa-solid fa-download"></i></button>
                             <button class="action-btn" style="color: #e74c3c; ${window.cloudhubIsPending ? 'display:none;' : ''}" onclick="handleDeleteFile('${file.id}')"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </td>
@@ -452,6 +465,148 @@ async function fetchAdminRequests() {
     }
 }
 
+// ─── ADMIN GLOBAL FILE MANAGER ──────────────────────────────────────────────
+
+async function fetchAdminUsersList() {
+    const panel = document.getElementById('admin-file-manager-panel');
+    if (panel) panel.style.display = 'block';
+
+    try {
+        const res = await authFetch(`${API_BASE}/admin/users-list`);
+        const result = await res.json();
+        if (result.status !== 'success') return;
+
+        const select = document.getElementById('admin-user-filter');
+        if (!select) return;
+
+        // Keep the "All Users" option, then add each user
+        select.innerHTML = '<option value="all">All Users</option>';
+        result.data.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.id;
+            opt.textContent = `${u.name}  (${u.file_count} file${u.file_count !== 1 ? 's' : ''})`;
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.error('fetchAdminUsersList error', e);
+    }
+}
+
+async function fetchAdminFiles() {
+    const ownerId = document.getElementById('admin-user-filter')?.value || 'all';
+    const q       = document.getElementById('admin-file-search')?.value?.trim() || '';
+    const tbody   = document.getElementById('admin-file-list');
+    const empty   = document.getElementById('admin-files-empty');
+    const badge   = document.getElementById('admin-files-count');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+    </td></tr>`;
+    if (empty) empty.style.display = 'none';
+
+    try {
+        const params = new URLSearchParams({ owner_id: ownerId, q });
+        const res = await authFetch(`${API_BASE}/admin/files?${params}`);
+        const result = await res.json();
+
+        if (result.status !== 'success') {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#e74c3c;">
+                Failed to load files: ${result.message}
+            </td></tr>`;
+            return;
+        }
+
+        const files = result.data;
+        if (badge) badge.textContent = files.length;
+        tbody.innerHTML = '';
+
+        if (files.length === 0) {
+            tbody.innerHTML = '';
+            if (empty) empty.style.display = 'block';
+            return;
+        }
+
+        files.forEach(file => {
+            // Colour coding by type
+            const iconMap = {
+                'PDF':        ['bg-pdf',        'fa-file-pdf'],
+                'Excel':      ['bg-excel',       'fa-file-excel'],
+                'PowerPoint': ['bg-powerpoint',  'fa-file-powerpoint'],
+                'Text':       ['bg-text',        'fa-file-lines'],
+                'Image':      ['bg-default',     'fa-file-image'],
+            };
+            const [bgClass, iClass] = iconMap[file.type] || ['bg-default', 'fa-file'];
+
+            const uid = getActiveUid();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="file-name-cell">
+                        <div class="file-icon ${bgClass}">
+                            <i class="fa-solid ${iClass}"></i>
+                        </div>
+                        <span title="${file.name}" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${file.name}</span>
+                    </div>
+                </td>
+                <td>
+                    <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(55,130,93,0.12);border:1px solid rgba(55,130,93,0.3);color:#37825d;padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;">
+                        <i class="fa-solid fa-user" style="font-size:0.75rem;"></i>${file.owner_name || '—'}
+                    </span>
+                </td>
+                <td>${file.type}</td>
+                <td>${file.size}</td>
+                <td>${file.date_modified}</td>
+                <td>
+                    <div class="file-actions" style="opacity:1;">
+                        <button class="action-btn" style="color:#3498db;" title="View / Download"
+                            onclick="handleDownloadFile('${file.id}')">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                        <button class="action-btn" style="color:#e74c3c;" title="Delete"
+                            onclick="handleAdminDeleteFile('${file.id}', '${file.name.replace(/'/g, "\\'")}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (e) {
+        console.error('fetchAdminFiles error', e);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#e74c3c;">
+            Server unreachable. Is Flask running?
+        </td></tr>`;
+    }
+}
+
+function handleAdminDeleteFile(fileId, fileName) {
+    showModal({
+        title: 'Delete File',
+        desc: `Permanently delete "${fileName}" from the platform? This action cannot be undone.`,
+        showInput: false,
+        onConfirm: async () => {
+            try {
+                const res = await authFetch(`${API_BASE}/files/${fileId}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    fetchAdminFiles();
+                    fetchFiles();
+                    fetchActivityLogs();
+                    fetchUserData();
+                } else {
+                    showModal({ title: 'Delete Error', desc: result.message, showInput: false, onConfirm: () => {} });
+                }
+            } catch(e) {
+                console.error('Admin delete failed', e);
+            }
+        }
+    });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
 async function handleRequestAction(reqId, action) {
     const label = action === 'approve' ? 'accept' : 'reject';
     showModal({
@@ -519,6 +674,11 @@ async function handleFileUpload(event) {
     } catch (e) {
         console.error("Upload failed", e);
     }
+}
+
+function handleDownloadFile(fileId) {
+    const uid = getActiveUid();
+    window.open(`${API_BASE}/files/download/${fileId}?uid=${uid}`, '_blank');
 }
 
 function handleDeleteFile(fileId) {

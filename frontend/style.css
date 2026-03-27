@@ -949,3 +949,38 @@ body.role-admin .request-item {
 body.role-admin .request-item:hover {
     background: rgba(255, 255, 255, 0.12) !important;
 }
+
+/* Admin Global File Manager Panel */
+.admin-file-manager {
+    border-top: 4px solid var(--purple-dark);
+    border-radius: var(--radius-lg);
+    position: relative;
+    margin-bottom: 40px;
+}
+
+.admin-file-manager::before {
+    content: 'Admin View — All Platform Files';
+    position: absolute;
+    top: -1px;
+    right: 30px;
+    background: var(--purple-dark);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 10px 4px;
+    border-radius: 0 0 8px 8px;
+}
+
+
+/* Table row hover in admin file manager */
+.admin-file-manager .file-table tbody tr:hover {
+    background: rgba(55, 130, 93, 0.04);
+}
+
+/* Owner badge consistent column width */
+.admin-file-manager .file-table th:nth-child(2),
+.admin-file-manager .file-table td:nth-child(2) {
+    white-space: nowrap;
+}

@@ -117,7 +117,8 @@
                             </div>
                         </div>
                     </section>
-                </div>
+
+                </div><!-- /left-col -->
 
                 <!-- RIGHT COLUMN -->
                 <div class="right-col">
@@ -174,6 +175,55 @@
 
                 </div>
             </div>
+
+            <!-- ADMIN GLOBAL FILE MANAGER — full width, outside grid (admin only) -->
+            <section class="card admin-file-manager" id="admin-file-manager-panel" style="display:none; margin-top: 30px;">
+                <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+                    <div class="card-title" style="color: #37825d;">
+                        <i class="fa-solid fa-database"></i> All Users' Files
+                        <span id="admin-files-count" style="background: #37825d; color: white; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-left: 6px;">0</span>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <!-- User Filter -->
+                        <select id="admin-user-filter" onchange="fetchAdminFiles()" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: var(--font-main); font-size: 0.9rem; color: var(--text-dark); background: white; cursor: pointer;">
+                            <option value="all">All Users</option>
+                        </select>
+                        <!-- Live Search -->
+                        <div style="position: relative;">
+                            <i class="fa-solid fa-search" style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                            <input type="text" id="admin-file-search" placeholder="Search files..." oninput="fetchAdminFiles()" style="padding: 8px 14px 8px 32px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: var(--font-main); font-size: 0.9rem; width: 220px; outline: none; color: var(--text-dark);">
+                        </div>
+                        <!-- Refresh -->
+                        <button onclick="fetchAdminFiles()" class="btn btn-white" style="padding: 8px 14px; font-size: 0.88rem;">
+                            <i class="fa-solid fa-rotate-right"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="file-table">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Owner</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Uploaded</th>
+                                <th style="text-align:center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-file-list">
+                            <tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="admin-files-empty" style="display:none; text-align:center; padding: 40px 20px; color: var(--text-muted);">
+                    <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; display:block; margin-bottom: 12px; opacity: 0.4;"></i>
+                    No files found matching your filter.
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -186,7 +236,7 @@
             if (p.get('uid'))  localStorage.setItem('cloudhub_uid',  p.get('uid'));
         })();
     </script>
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
     <!-- Custom UI Modal System -->
     <div class="custom-modal-overlay" id="custom-modal">
         <div class="custom-modal-card">
