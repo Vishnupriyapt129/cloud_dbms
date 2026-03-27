@@ -185,6 +185,10 @@ async function fetchFolders() {
                 card.className = 'folder-card';
                 card.dataset.folderId = folder.id;
                 card.innerHTML = `
+                    <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s;" class="folder-actions">
+                        <button class="action-btn" onclick="handleRenameFolder(event, '${folder.id}', '${folder.name.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-pen"></i></button>
+                        <button class="action-btn" onclick="handleDeleteFolder(event, '${folder.id}', '${folder.name.replace(/'/g, "\\'")}')" style="background: none; border: none; color: #e74c3c; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                     <div class="folder-card-icon" style="color:${folderColor};">
                         <i class="fa-solid fa-folder"></i>
                     </div>
@@ -194,7 +198,15 @@ async function fetchFolders() {
                         ${folder.created_at || 'Recent'}
                     </div>
                 `;
-                card.addEventListener('click', () => openFolder(folder.id, folder.name, folderColor));
+                // Add hover effect specifically via JS if CSS is lacking
+                card.onmouseenter = () => { const act = card.querySelector('.folder-actions'); if(act) act.style.opacity = '1'; };
+                card.onmouseleave = () => { const act = card.querySelector('.folder-actions'); if(act) act.style.opacity = '0'; };
+
+                card.addEventListener('click', (e) => {
+                    // Prevent opening folder if clicking action buttons
+                    if(e.target.closest('.action-btn')) return;
+                    openFolder(folder.id, folder.name, folderColor);
+                });
                 grid.appendChild(card);
             });
         }
@@ -883,6 +895,70 @@ function triggerLogout() {
         showInput: false,
         onConfirm: () => {
             handleLogout();
+        }
+    });
+}
+
+async function handleLogout() {
+    try {
+        await authFetch(`${API_BASE}/user/logout`, { method: 'POST' });
+    } catch (e) {
+        console.error("Logout API failed", e);
+    }
+    localStorage.removeItem('cloudhub_role');
+    localStorage.removeItem('cloudhub_uid');
+    window.location.href = 'login.html';
+}
+
+function handleRenameFolder(event, folderId, oldName) {
+    if(event) event.stopPropagation();
+    showModal({
+        title: "Rename Folder",
+        desc: "Enter a new name for this folder:",
+        showInput: true,
+        defaultValue: oldName,
+        onConfirm: async (newName) => {
+            if (!newName || newName.trim() === '' || newName === oldName) return;
+            try {
+                const res = await authFetch(`${API_BASE}/folders/${folderId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    fetchFolders();
+                    fetchActivityLogs();
+                } else {
+                    showModal({ title: "Error", desc: result.message, showInput: false, onConfirm: () => {} });
+                }
+            } catch (e) {
+                console.error("Rename failed", e);
+            }
+        }
+    });
+}
+
+function handleDeleteFolder(event, folderId, folderName) {
+    if(event) event.stopPropagation();
+    showModal({
+        title: "Delete Folder",
+        desc: `Are you sure you want to permanently delete "${folderName}" and all its contents? This action cannot be undone.`,
+        showInput: false,
+        onConfirm: async () => {
+            try {
+                const res = await authFetch(`${API_BASE}/folders/${folderId}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    fetchFolders();
+                    fetchActivityLogs();
+                    fetchUserData(); // Updates storage
+                } else {
+                    showModal({ title: "Error", desc: result.message, showInput: false, onConfirm: () => {} });
+                }
+            } catch(e) {
+                console.error("Delete failed", e);
+            }
         }
     });
 }

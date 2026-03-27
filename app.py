@@ -899,6 +899,100 @@ def admin_get_all_files():
     conn.close()
     return jsonify({"status": "success", "data": files}), 200
 
+# ---------------------------------------------------------
+# RENAME AND DELETE FOLDERS
+# ---------------------------------------------------------
+
+@app.route('/api/folders/<int:folder_id>', methods=['DELETE'])
+def delete_folder(folder_id):
+    user_id = int(request.headers.get('Authorization', 1) or 1)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
+    # Verify owner
+    cursor.execute("SELECT foldername, created_by FROM folders WHERE folder_id = %s", (folder_id,))
+    folder = cursor.fetchone()
+    if not folder:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "Folder not found"}), 404
+    
+    if folder['created_by'] != user_id:
+        cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+        u = cursor.fetchone()
+        if not u or u['role'] != 'admin':
+            cursor.close()
+            conn.close()
+            return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    cursor.execute("DELETE FROM folders WHERE folder_id = %s", (folder_id,))
+    
+    cursor.execute(
+        "INSERT INTO activity_log (user_id, action, action_desc, action_icon) VALUES (%s, %s, %s, %s)",
+        (user_id, 'deleted folder', folder['foldername'], 'trash')
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "message": "Folder deleted."}), 200
+
+
+@app.route('/api/folders/<int:folder_id>', methods=['PUT'])
+def rename_folder(folder_id):
+    user_id = int(request.headers.get('Authorization', 1) or 1)
+    data = request.json
+    if not data or 'name' not in data:
+        return jsonify({"status": "error", "message": "Invalid request"}), 400
+
+    new_name = data['name'].strip()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT created_by FROM folders WHERE folder_id = %s", (folder_id,))
+    folder = cursor.fetchone()
+    if not folder or folder['created_by'] != user_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "Unauthorized or not found"}), 403
+
+    cursor.execute("UPDATE folders SET foldername = %s WHERE folder_id = %s", (new_name, folder_id))
+    
+    cursor.execute(
+        "INSERT INTO activity_log (user_id, action, action_desc, action_icon) VALUES (%s, %s, %s, %s)",
+        (user_id, 'renamed folder', new_name, 'pen')
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "message": "Folder renamed."}), 200
+
+# ---------------------------------------------------------
+# UPDATE LOGOUT ROUTE FOR ACTIVITY LOGGING
+# ---------------------------------------------------------
+
+@app.route('/api/user/logout', methods=['POST'])
+def user_logout():
+    user_id = int(request.headers.get('Authorization', 1) or 1)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO activity_log (user_id, action, action_desc, action_icon) VALUES (%s, %s, %s, %s)",
+        (user_id, 'logged out', 'system', 'right-from-bracket')
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "message": "Logged out."}), 200
+
+
 
 @app.route('/api/admin/users-list', methods=['GET'])
 def admin_list_users():

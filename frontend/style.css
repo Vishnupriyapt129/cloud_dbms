@@ -1018,6 +1018,7 @@ body.role-admin .request-item:hover {
     transition: var(--transition);
     text-align: center;
     user-select: none;
+    position: relative;
 }
 
 .folder-card:hover {
