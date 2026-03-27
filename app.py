@@ -16,12 +16,29 @@ def handle_exception(e):
 # ---------------------------------------------------------
 # MySQL DATABASE CONFIGURATION (PyMySQL)
 # ---------------------------------------------------------
+db_host = os.environ.get('DB_HOST', 'localhost')
+db_port = int(os.environ.get('DB_PORT', 3306))
+
+# In case the user enters the port within the DB_HOST string (e.g. host.aivencloud.com:12345)
+if ':' in db_host and db_host.count(':') == 1:
+    db_host_split, port_str = db_host.split(':')
+    db_host = db_host_split
+    db_port = int(port_str)
+
+# Include basic SSL if DB_REQUIRE_SSL is set, since many cloud providers require it
+db_ssl_kwargs = {}
+if os.environ.get('DB_REQUIRE_SSL', 'false').lower() == 'true':
+    import ssl
+    db_ssl_kwargs['ssl'] = ssl.create_default_context()
+
 DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
+    'host': db_host,
     'user': os.environ.get('DB_USER', 'root'),
     'password': os.environ.get('DB_PASSWORD', 'password'),
     'database': os.environ.get('DB_NAME', 'cloudhub'),
-    'connect_timeout': 5
+    'port': db_port,
+    'connect_timeout': 10,
+    **db_ssl_kwargs
 }
 
 def get_db_connection():

@@ -2,15 +2,32 @@ import pymysql
 from pymysql.constants import CLIENT
 import os
 
+db_host = os.environ.get('DB_HOST', 'localhost')
+db_port = int(os.environ.get('DB_PORT', 3306))
+
+if ':' in db_host and db_host.count(':') == 1:
+    db_host_split, port_str = db_host.split(':')
+    db_host = db_host_split
+    db_port = int(port_str)
+
+db_ssl_kwargs = {}
+if os.environ.get('DB_REQUIRE_SSL', 'false').lower() == 'true':
+    import ssl
+    db_ssl_kwargs['ssl'] = ssl.create_default_context()
+
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'password',
-    'connect_timeout': 5,
-    'client_flag': CLIENT.MULTI_STATEMENTS
+    'host': db_host,
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASSWORD', 'password'),
+    # database connection omitted initially or explicitly set if possible
+    'database': os.environ.get('DB_NAME', 'cloudhub'),
+    'port': db_port,
+    'connect_timeout': 10,
+    'client_flag': CLIENT.MULTI_STATEMENTS,
+    **db_ssl_kwargs
 }
 
-print("Attempting to securely connect to local environment via PyMySQL...")
+print(f"Attempting to securely connect to {DB_CONFIG['host']}:{DB_CONFIG['port']} via PyMySQL...")
 try:
     conn = pymysql.connect(**DB_CONFIG)
     cursor = conn.cursor()

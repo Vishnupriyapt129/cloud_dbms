@@ -1,9 +1,8 @@
 -- CloudHub MySQL Database Schema
 -- Matches ER Diagram exactly: Users, Files, Folders, Access_control, Activity_log
 
-DROP DATABASE IF EXISTS cloudhub;
-CREATE DATABASE IF NOT EXISTS cloudhub;
-USE cloudhub;
+-- Cloud platforms typically pre-create the DB and restrict CREATE DATABASE privileges.
+-- We rely on the established connection's database selection to run these.
 
 -- ============================================================
 -- ENTITY: Users
