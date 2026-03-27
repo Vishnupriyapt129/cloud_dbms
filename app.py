@@ -197,6 +197,10 @@ def get_files():
     else:
         if folder_id and folder_id != 'undefined':
             cursor.execute(base_sql + " WHERE f.owner_id = %s AND f.folder_id = %s ORDER BY f.uploaddate DESC", (user_id, folder_id))
+        # Add limit support for Recent Files view
+        limit = request.args.get('limit')
+        if limit and limit.isdigit():
+            cursor.execute(base_sql + f" WHERE f.owner_id = %s ORDER BY f.uploaddate DESC LIMIT {int(limit)}", (user_id,))
         else:
             cursor.execute(base_sql + " WHERE f.owner_id = %s ORDER BY f.uploaddate DESC", (user_id,))
 

@@ -41,50 +41,97 @@ function changeView(view) {
     const activeLi = document.getElementById(`nav-${view}`);
     if (activeLi) activeLi.classList.add('active');
 
+    const grid = document.getElementById('folder-grid');
+    grid.innerHTML = ''; // Start clean
+
     // 2. Logic for each view
-    // 'home' and 'folders' are currently handled by showing the folder grid
     if (view === 'home' || view === 'folders') {
         closeFolder(); // Switch to grid view
+        document.getElementById('welcome-message').textContent = view === 'home' ? 'Vault Access' : 'Cloud Folders';
+        
+        if (view === 'home') {
+             fetchRecentFilesForHome();
+             fetchFolders(false);
+        } else {
+             fetchFolders(true);
+        }
     } else {
         // For Shared/Recent/Trash - we show a placeholder for now
-        // This makes the UI feel alive as requested
-        document.getElementById('folder-grid').innerHTML = `
-            <div class="placeholder-view" style="grid-column: 1 / -1; text-align:center; padding: 100px 0;">
-                <i class="fa-solid fa-hourglass-half" style="font-size: 4rem; color: var(--border); margin-bottom: 20px;"></i>
+        grid.innerHTML = `
+            <div class="placeholder-view" style="grid-column: 1 / -1; text-align:center; padding: 60px 0;">
+                <i class="fa-solid fa-hourglass-half" style="font-size: 4rem; color: var(--border); margin-bottom: 20px; display:block;"></i>
                 <h2 style="color: var(--text-muted);">${view.toUpperCase()} view coming soon</h2>
                 <p style="opacity:0.5;">This module is being integrated with your cloud instance.</p>
+                <button class="btn btn-accent" style="margin: 20px auto;" onclick="changeView('home')">Return Home</button>
             </div>
         `;
         document.getElementById('file-panel').style.display = 'none';
         document.getElementById('folder-breadcrumb').style.display = 'none';
         
-        // Update welcome message
         const viewNames = { 'recent':'Recent Files', 'shared':'Shared with Me', 'trash':'Trash Bin' };
         document.getElementById('welcome-message').textContent = viewNames[view] || 'Vault';
     }
 }
 
+async function fetchRecentFilesForHome() {
+    try {
+        const res = await authFetch(`${API_BASE}/files?limit=6`);
+        const result = await res.json();
+        const grid = document.getElementById('folder-grid');
+        
+        if (result.status === 'success' && result.data.length > 0) {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'grid-column: 1 / -1; margin-bottom: 30px;';
+            wrapper.innerHTML = `
+                <div style="font-weight:700; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--primary)"></i> Recently Active
+                </div>
+                <div id="recent-files-strip" style="display:flex; gap:15px; overflow-x:auto; padding-bottom:10px;"></div>
+            `;
+            grid.appendChild(wrapper);
+
+            const strip = wrapper.querySelector('#recent-files-strip');
+            result.data.forEach(file => {
+                const card = document.createElement('div');
+                card.className = 'recent-file-card';
+                card.onclick = () => { /* open specific view if needed */ };
+                const iconClass = getFileIconClass(file.type).split(' ')[1];
+                card.innerHTML = `
+                    <div class="file-mini-icon"><i class="fa-solid ${iconClass}"></i></div>
+                    <div class="file-mini-name">${file.name}</div>
+                `;
+                strip.appendChild(card);
+            });
+
+            // Add "All Folders" section title
+            const folderHeading = document.createElement('div');
+            folderHeading.style.cssText = 'grid-column: 1 / -1; font-weight:700; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; margin: 10px 0 15px;';
+            folderHeading.innerHTML = '<i class="fa-solid fa-folder-tree"></i> Root Directories';
+            grid.appendChild(folderHeading);
+        }
+    } catch(e) { console.error("Home Recent Fetch Error:", e); }
+}
+
 async function showFullActivityLog() {
-    // Fetch logs but show in a modal for 'details'
+    // Reuse existing logic, but ensure limit 50 is used
     const res = await authFetch(`${API_BASE}/activity?limit=50`);
     const result = await res.json();
     
     if (result.status === 'success') {
         const logs = result.data;
-        let html = '<div style="max-height: 400px; overflow-y:auto; padding-right:10px;">';
+        let html = '<div style="max-height: 480px; overflow-y:auto; padding-right:10px;">';
         logs.forEach(log => {
             html += `
-                <div style="padding: 12px; border-bottom: 1px solid var(--border); display:flex; gap:12px; align-items:center;">
-                    <span style="font-size: 0.7rem; color: var(--text-muted); min-width:80px;">${log.time_ago}</span>
-                    <strong style="color: var(--primary);">${log.user_name}</strong>
-                    <span>${log.action}</span>
-                    <span style="opacity:0.6; font-size: 0.85rem;">${log.target}</span>
+                <div style="padding: 14px; border-bottom: 1px solid var(--border); display:flex; gap:15px; align-items:center; transition:0.2s; cursor:default;" class="log-row">
+                    <span style="font-size: 0.65rem; color: var(--text-muted); width:90px; flex-shrink:0;">${log.time_ago}</span>
+                    <strong style="color: var(--primary); font-size:0.9rem;">${log.user_name}</strong>
+                    <span style="font-size:0.9rem;">${log.action}</span>
+                    <span style="opacity:0.4; font-size: 0.8rem; margin-left:auto;">${log.target || 'System'}</span>
                 </div>
             `;
         });
         html += '</div>';
 
-        // Reuse the custom-modal if it exists
         const modal = document.getElementById('custom-modal');
         const title = document.getElementById('modal-title');
         const desc = document.getElementById('modal-desc');
@@ -92,10 +139,10 @@ async function showFullActivityLog() {
         const confirmBtn = document.getElementById('modal-confirm');
         const cancelBtn = document.getElementById('modal-cancel');
 
-        title.textContent = "Full Activity History";
+        title.innerHTML = '<i class="fa-solid fa-history" style="color:var(--primary)"></i> Activity History';
         desc.innerHTML = html;
         input.style.display = 'none';
-        confirmBtn.textContent = 'Close';
+        confirmBtn.textContent = 'Dismiss Log';
         confirmBtn.onclick = () => modal.classList.remove('active');
         cancelBtn.style.display = 'none';
         
@@ -226,7 +273,7 @@ async function checkApprovalStatus() {
     } catch(e) {}
 }
 
-async function fetchFolders() {
+async function fetchFolders(clear = true) {
     try {
         const res = await authFetch(`${API_BASE}/folders?t=${Date.now()}`);
         const result = await res.json();
@@ -235,7 +282,7 @@ async function fetchFolders() {
             const folders = result.data;
             const grid = document.getElementById('folder-grid');
             if (!grid) return;
-            grid.innerHTML = '';
+            if (clear) grid.innerHTML = '';
 
             if (folders.length === 0) {
                 grid.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);">

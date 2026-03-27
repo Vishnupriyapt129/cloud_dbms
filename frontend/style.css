@@ -527,3 +527,56 @@ body {
     .portal-header { padding: 0 20px; }
     .search-box { width: 100%; }
 }
+
+/* RECENT FILE CARDS ON HOME */
+.recent-file-card {
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    min-width: 140px;
+    text-align: center;
+    transition: var(--transition);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.recent-file-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.15);
+}
+
+.file-mini-icon {
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.file-mini-name {
+    font-size: 0.73rem;
+    color: var(--text-base);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
