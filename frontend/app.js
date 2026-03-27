@@ -35,6 +35,74 @@ document.addEventListener('DOMContentLoaded', () => {
     setupProfileDropdown();
 });
 
+function changeView(view) {
+    // 1. Update active sidebar item
+    document.querySelectorAll('.side-nav li').forEach(li => li.classList.remove('active'));
+    const activeLi = document.getElementById(`nav-${view}`);
+    if (activeLi) activeLi.classList.add('active');
+
+    // 2. Logic for each view
+    // 'home' and 'folders' are currently handled by showing the folder grid
+    if (view === 'home' || view === 'folders') {
+        closeFolder(); // Switch to grid view
+    } else {
+        // For Shared/Recent/Trash - we show a placeholder for now
+        // This makes the UI feel alive as requested
+        document.getElementById('folder-grid').innerHTML = `
+            <div class="placeholder-view" style="grid-column: 1 / -1; text-align:center; padding: 100px 0;">
+                <i class="fa-solid fa-hourglass-half" style="font-size: 4rem; color: var(--border); margin-bottom: 20px;"></i>
+                <h2 style="color: var(--text-muted);">${view.toUpperCase()} view coming soon</h2>
+                <p style="opacity:0.5;">This module is being integrated with your cloud instance.</p>
+            </div>
+        `;
+        document.getElementById('file-panel').style.display = 'none';
+        document.getElementById('folder-breadcrumb').style.display = 'none';
+        
+        // Update welcome message
+        const viewNames = { 'recent':'Recent Files', 'shared':'Shared with Me', 'trash':'Trash Bin' };
+        document.getElementById('welcome-message').textContent = viewNames[view] || 'Vault';
+    }
+}
+
+async function showFullActivityLog() {
+    // Fetch logs but show in a modal for 'details'
+    const res = await authFetch(`${API_BASE}/activity?limit=50`);
+    const result = await res.json();
+    
+    if (result.status === 'success') {
+        const logs = result.data;
+        let html = '<div style="max-height: 400px; overflow-y:auto; padding-right:10px;">';
+        logs.forEach(log => {
+            html += `
+                <div style="padding: 12px; border-bottom: 1px solid var(--border); display:flex; gap:12px; align-items:center;">
+                    <span style="font-size: 0.7rem; color: var(--text-muted); min-width:80px;">${log.time_ago}</span>
+                    <strong style="color: var(--primary);">${log.user_name}</strong>
+                    <span>${log.action}</span>
+                    <span style="opacity:0.6; font-size: 0.85rem;">${log.target}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        // Reuse the custom-modal if it exists
+        const modal = document.getElementById('custom-modal');
+        const title = document.getElementById('modal-title');
+        const desc = document.getElementById('modal-desc');
+        const input = document.getElementById('modal-input');
+        const confirmBtn = document.getElementById('modal-confirm');
+        const cancelBtn = document.getElementById('modal-cancel');
+
+        title.textContent = "Full Activity History";
+        desc.innerHTML = html;
+        input.style.display = 'none';
+        confirmBtn.textContent = 'Close';
+        confirmBtn.onclick = () => modal.classList.remove('active');
+        cancelBtn.style.display = 'none';
+        
+        modal.classList.add('active');
+    }
+}
+
 function setupProfileDropdown() {
     const profileBtn = document.getElementById('profile-dropdown-btn');
     const dropdownMenu = document.getElementById('profile-dropdown-menu');
@@ -378,13 +446,13 @@ async function fetchActivityLogs() {
                 const li = document.createElement('div');
                 li.className = 'activity-item';
 
-                const iconClass = getActivityIcon(log.icon);
-
                 li.innerHTML = `
-                    <div class="activity-content">
-                        <strong>${log.user_name}</strong> ${log.action}
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                        <span style="font-weight:600; font-size:0.8rem;">
+                            <span style="color:var(--primary)">${log.user_name}</span> ${log.action}
+                        </span>
+                        <span style="font-size:0.65rem; opacity:0.5; white-space:nowrap; margin-top:2px;">${log.time_ago}</span>
                     </div>
-                    <span class="activity-time">${log.time_ago}</span>
                 `;
                 container.appendChild(li);
             });

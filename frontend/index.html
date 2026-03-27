@@ -19,17 +19,19 @@
             </div>
             
             <ul class="side-nav">
-                <li class="active"><a href="#" onclick="closeFolder()"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-folder-tree"></i> <span>Folders</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-clock-rotate-left"></i> <span>Recent</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-share-nodes"></i> <span>Shared</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-trash-can"></i> <span>Trash</span></a></li>
+                <li id="nav-home" class="active"><a href="#" onclick="changeView('home')"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+                <li id="nav-folders"><a href="#" onclick="changeView('folders')"><i class="fa-solid fa-folder-tree"></i> <span>Folders</span></a></li>
+                <li id="nav-recent"><a href="#" onclick="changeView('recent')"><i class="fa-solid fa-clock-rotate-left"></i> <span>Recent</span></a></li>
+                <li id="nav-shared"><a href="#" onclick="changeView('shared')"><i class="fa-solid fa-share-nodes"></i> <span>Shared</span></a></li>
+                <li id="nav-trash"><a href="#" onclick="changeView('trash')"><i class="fa-solid fa-trash-can"></i> <span>Trash</span></a></li>
             </ul>
 
-            <!-- LIVE ACTIVITY FEED -->
+            <!-- ACTIVITY HISTORY SIDEBAR -->
             <div class="sidebar-activity">
                 <div class="side-head">
-                    <span class="side-title">Live Activity</span>
+                    <span class="side-title" onclick="showFullActivityLog()" style="cursor:pointer; color:var(--primary);">
+                        Activity History <i class="fa-solid fa-chevron-right" style="font-size:0.6rem; opacity:0.6;"></i>
+                    </span>
                     <button class="btn-icon-xs" onclick="fetchActivityLogs()"><i class="fa-solid fa-rotate"></i></button>
                 </div>
                 <div id="activity-list" class="sidebar-feed"></div>
