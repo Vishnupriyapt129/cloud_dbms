@@ -103,9 +103,66 @@ body {
     font-size: 1.2rem;
 }
 
+/* SIDEBAR ACTIVITY */
+.sidebar-activity {
+    margin: 25px 0;
+    padding: 0 10px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.side-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.side-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.btn-icon-xs {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: var(--transition);
+}
+
+.btn-icon-xs:hover { color: var(--primary); }
+
+.sidebar-feed {
+    overflow-y: auto;
+    max-height: 300px;
+    padding-right: 5px;
+}
+
+.sidebar-feed::-webkit-scrollbar { width: 3px; }
+.sidebar-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+
+.activity-item {
+    font-size: 0.8rem;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.4;
+}
+
+.activity-item strong { color: var(--primary); }
+.activity-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; display: block; }
+
 /* STORAGE CARD IN SIDEBAR */
 .sidebar-footer {
-    margin-top: 30px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
 }
 
 .storage-card {

@@ -26,6 +26,15 @@
                 <li><a href="#"><i class="fa-solid fa-trash-can"></i> <span>Trash</span></a></li>
             </ul>
 
+            <!-- LIVE ACTIVITY FEED -->
+            <div class="sidebar-activity">
+                <div class="side-head">
+                    <span class="side-title">Live Activity</span>
+                    <button class="btn-icon-xs" onclick="fetchActivityLogs()"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+                <div id="activity-list" class="sidebar-feed"></div>
+            </div>
+
             <div class="sidebar-footer">
                 <div class="storage-card">
                     <div class="storage-labels">
@@ -133,10 +142,7 @@
                             <div id="admin-file-list" class="mini-files"></div>
                         </div>
 
-                        <div class="activity-card">
-                            <h3><i class="fa-solid fa-bolt"></i> Live Feed</h3>
-                            <div id="activity-list" class="activity-feed"></div>
-                        </div>
+
 
                         <div class="access-card">
                             <h3><i class="fa-solid fa-lock"></i> Share Access</h3>

@@ -375,21 +375,16 @@ async function fetchActivityLogs() {
             container.innerHTML = '';
 
             activities.forEach(log => {
-                const li = document.createElement('li');
+                const li = document.createElement('div');
                 li.className = 'activity-item';
 
                 const iconClass = getActivityIcon(log.icon);
 
                 li.innerHTML = `
-                    <div class="activity-icon">
-                        <i class="fa-solid ${iconClass}"></i>
+                    <div class="activity-content">
+                        <strong>${log.user_name}</strong> ${log.action}
                     </div>
-                    <div>
-                        <div class="activity-content">
-                            <strong>${log.user_name}</strong> ${log.action} ${log.target}
-                        </div>
-                        <span class="activity-time">${log.time_ago}</span>
-                    </div>
+                    <span class="activity-time">${log.time_ago}</span>
                 `;
                 container.appendChild(li);
             });
