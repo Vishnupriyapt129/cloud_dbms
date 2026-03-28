@@ -27,8 +27,15 @@
         }
 
         @media (max-width: 1000px) {
-            .login-wrapper { flex-direction: column; gap: 40px; padding: 20px; }
-            .system-info-side { display: none; }
+            .login-wrapper {
+                flex-direction: column;
+                gap: 40px;
+                padding: 20px;
+            }
+
+            .system-info-side {
+                display: none;
+            }
         }
 
         .system-info-side h1 {
@@ -67,9 +74,24 @@
             box-shadow: 0 10px 30px var(--secondary-glow);
         }
 
-        .mini-stat-card i { font-size: 1.5rem; margin-bottom: 12px; color: var(--secondary); }
-        .mini-stat-card .val { font-size: 1.4rem; font-weight: 700; color: white; }
-        .mini-stat-card .lab { font-size: 0.75rem; opacity: 0.6; font-weight: 600; text-transform: uppercase; }
+        .mini-stat-card i {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            color: var(--secondary);
+        }
+
+        .mini-stat-card .val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .mini-stat-card .lab {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
 
         .login-container {
             width: 480px;
@@ -401,12 +423,13 @@
         }
     </style>
 </head>
+
 <body>
     <div class="login-wrapper">
         <div class="system-info-side">
             <h1>CloudHub<br>Platform Access</h1>
             <p>Unified Storage & Security Infrastructure for Modern Enterprises.</p>
-            
+
             <div class="stat-cards-grid">
                 <div class="mini-stat-card">
                     <i class="fa-solid fa-server"></i>
@@ -434,505 +457,523 @@
         <div class="login-container">
             <!-- ===== SCREEN 1: Role Selection ===== -->
             <div class="login-card" id="screen-roles">
+                <div style="text-align: left; margin-bottom: 25px;">
+                    <a href="home.html"
+                        style="color:var(--text-muted); text-decoration:none; font-size:0.9rem; font-weight:600; display:inline-flex; align-items:center; gap:8px; transition:color 0.3s;"
+                        onmouseover="this.style.color='var(--primary)'"
+                        onmouseout="this.style.color='var(--text-muted)'">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Home
+                    </a>
+                </div>
                 <i class="fa-solid fa-cloud" style="font-size: 3.5rem; margin-bottom: 20px;"></i>
                 <h2>Sign In</h2>
-            <p>Choose your role to continue</p>
+                <p>Choose your role to continue</p>
 
-            <button type="button" class="role-btn" onclick="showScreen('admin')">
-                <i class="fa-solid fa-user-shield"></i>
-                <div class="btn-contents">
-                    <h3>Administrator</h3>
-                    <p>Full suite access - file control and user management.</p>
-                </div>
-            </button>
-
-            <button type="button" class="role-btn" onclick="showScreen('user-login')">
-                <i class="fa-solid fa-user"></i>
-                <div class="btn-contents">
-                    <h3>Regular User</h3>
-                    <p>Log in or request new access.</p>
-                </div>
-            </button>
-        </div>
-
-        <!-- ===== SCREEN 2b: User Login ===== -->
-        <div class="login-card" id="screen-user-login" style="display:none;">
-            <i class="fa-solid fa-user-check" style="font-size:3.2rem;margin-bottom:18px;"></i>
-            <h2>User Login</h2>
-            <p>Access your files and folders</p>
-
-            <form onsubmit="handleUserLogin(event)">
-                <div class="input-group">
-                    <i class="fa-solid fa-envelope field-icon"></i>
-                    <input type="email" id="user-login-email" placeholder="Email Address" autocomplete="username">
-                </div>
-                <div class="input-group">
-                    <i class="fa-solid fa-lock field-icon"></i>
-                    <input type="password" id="user-login-password" placeholder="Password"
-                        autocomplete="current-password">
-                    <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('user-login-password', this)"></i>
-                </div>
-                <button type="submit" class="submit-btn" id="user-login-btn">
-                    <i class="fa-solid fa-right-to-bracket"></i> Sign In as User
-                </button>
-                <div style="margin-top:20px; text-align:center;">
-                    <a href="#" onclick="showScreen('user')"
-                        style="color:hsl(145, 20%, 88%);font-size:0.95rem;text-decoration:none;font-weight:500;">Need an
-                        account? Request access</a>
-                </div>
-                <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
-            </form>
-        </div>
-
-        <!-- ===== SCREEN 2a: Admin Login ===== -->
-        <div class="login-card" id="screen-admin" style="display:none;">
-            <i class="fa-solid fa-user-shield" style="font-size:3.2rem;margin-bottom:18px;"></i>
-            <h2>Administrator Login</h2>
-            <p>Enter your secure admin credentials</p>
-
-            <form onsubmit="handleAdminAuth(event)">
-                <div class="input-group">
-                    <i class="fa-solid fa-envelope field-icon"></i>
-                    <input type="email" id="admin-email" placeholder="Admin Email Address" autocomplete="username">
-                </div>
-                <div class="input-group">
-                    <i class="fa-solid fa-lock field-icon"></i>
-                    <input type="password" id="admin-password" placeholder="Password" autocomplete="current-password">
-                    <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('admin-password', this)"></i>
-                </div>
-                <div class="form-options">
-                    <label><input type="checkbox"> Remember me</label>
-                    <a href="#" onclick="alert('A reset link has been sent to your admin email.')">Forgot Password?</a>
-                </div>
-                <button type="submit" class="submit-btn" id="admin-submit-btn">
-                    <i class="fa-solid fa-right-to-bracket"></i> Sign In as Admin
-                </button>
-                <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
-            </form>
-        </div>
-
-        <!-- ===== SCREEN 2c: User Sign-Up + Access Request ===== -->
-        <div class="login-card" id="screen-user" style="display:none;">
-            <i class="fa-solid fa-user-plus" style="font-size:3.2rem;margin-bottom:18px;"></i>
-            <h2>Request Access</h2>
-            <p>Submit your details for admin approval</p>
-
-            <div class="user-form-note">
-                <i class="fa-solid fa-circle-info"></i>
-                <span>Your account is created immediately. A request is auto-sent to the admin - you'll get full access
-                    once they approve it.</span>
-            </div>
-
-            <div onkeypress="if(event.key==='Enter') handleUserSignup(event)">
-                <div class="input-group">
-                    <i class="fa-solid fa-id-card field-icon"></i>
-                    <input type="text" id="user-name" placeholder="Full Name" autocomplete="off">
-                </div>
-                <div class="input-group">
-                    <i class="fa-solid fa-envelope field-icon"></i>
-                    <input type="email" id="user-email" placeholder="Email Address" autocomplete="off">
-                </div>
-                <div class="input-group" style="margin-bottom: 8px;">
-                    <i class="fa-solid fa-lock field-icon"></i>
-                    <input type="password" id="user-password" placeholder="Create a Password"
-                        autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
-                    <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('user-password', this)"></i>
-                </div>
-
-                <div id="password-strength-container" style="display: none; margin-bottom: 20px;">
-                    <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 4px;">
-                        <div id="strength-bar" style="height: 100%; width: 0%; background: #e74c3c; transition: all 0.3s ease;"></div>
+                <button type="button" class="role-btn" onclick="showScreen('admin')">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <div class="btn-contents">
+                        <h3>Administrator</h3>
+                        <p>Full suite access - file control and user management.</p>
                     </div>
-                    <div id="strength-text" style="font-size: 0.78rem; text-align: right; opacity: 0.7; font-weight: 600;">Strength: Weak</div>
-                </div>
-
-                <div class="section-divider">Access Request Details</div>
-
-                <div class="input-group">
-                    <i class="fa-solid fa-tag field-icon"></i>
-                    <input type="text" id="user-request-type"
-                        placeholder="Request Type  (e.g. Storage Upgrade, Team Access)">
-                </div>
-                <div class="input-group">
-                    <i class="fa-solid fa-comment-dots field-icon top-align"></i>
-                    <textarea id="user-reason"
-                        placeholder="Briefly explain why you need access to CloudHub..."></textarea>
-                </div>
-
-                <button type="button" class="submit-btn" id="user-submit-btn" onclick="handleUserSignup(event)">
-                    <i class="fa-solid fa-paper-plane"></i> Submit Access Request
                 </button>
-                <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
+
+                <button type="button" class="role-btn" onclick="showScreen('user-login')">
+                    <i class="fa-solid fa-user"></i>
+                    <div class="btn-contents">
+                        <h3>Regular User</h3>
+                        <p>Log in or request new access.</p>
+                    </div>
+                </button>
+            </div>
+
+            <!-- ===== SCREEN 2b: User Login ===== -->
+            <div class="login-card" id="screen-user-login" style="display:none;">
+                <i class="fa-solid fa-user-check" style="font-size:3.2rem;margin-bottom:18px;"></i>
+                <h2>User Login</h2>
+                <p>Access your files and folders</p>
+
+                <form onsubmit="handleUserLogin(event)">
+                    <div class="input-group">
+                        <i class="fa-solid fa-envelope field-icon"></i>
+                        <input type="email" id="user-login-email" placeholder="Email Address" autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock field-icon"></i>
+                        <input type="password" id="user-login-password" placeholder="Password"
+                            autocomplete="current-password">
+                        <i class="fa-solid fa-eye show-pwd-icon"
+                            onclick="togglePassword('user-login-password', this)"></i>
+                    </div>
+                    <button type="submit" class="submit-btn" id="user-login-btn">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In as User
+                    </button>
+                    <div style="margin-top:20px; text-align:center;">
+                        <a href="#" onclick="showScreen('user')"
+                            style="color:hsl(145, 20%, 88%);font-size:0.95rem;text-decoration:none;font-weight:500;">Need
+                            an
+                            account? Request access</a>
+                    </div>
+                    <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
+                </form>
+            </div>
+
+            <!-- ===== SCREEN 2a: Admin Login ===== -->
+            <div class="login-card" id="screen-admin" style="display:none;">
+                <i class="fa-solid fa-user-shield" style="font-size:3.2rem;margin-bottom:18px;"></i>
+                <h2>Administrator Login</h2>
+                <p>Enter your secure admin credentials</p>
+
+                <form onsubmit="handleAdminAuth(event)">
+                    <div class="input-group">
+                        <i class="fa-solid fa-envelope field-icon"></i>
+                        <input type="email" id="admin-email" placeholder="Admin Email Address" autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock field-icon"></i>
+                        <input type="password" id="admin-password" placeholder="Password"
+                            autocomplete="current-password">
+                        <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('admin-password', this)"></i>
+                    </div>
+                    <div class="form-options">
+                        <label><input type="checkbox"> Remember me</label>
+                        <a href="#" onclick="alert('A reset link has been sent to your admin email.')">Forgot
+                            Password?</a>
+                    </div>
+                    <button type="submit" class="submit-btn" id="admin-submit-btn">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In as Admin
+                    </button>
+                    <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
+                </form>
+            </div>
+
+            <!-- ===== SCREEN 2c: User Sign-Up + Access Request ===== -->
+            <div class="login-card" id="screen-user" style="display:none;">
+                <i class="fa-solid fa-user-plus" style="font-size:3.2rem;margin-bottom:18px;"></i>
+                <h2>Request Access</h2>
+                <p>Submit your details for admin approval</p>
+
+                <div class="user-form-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Your account is created immediately. A request is auto-sent to the admin - you'll get full
+                        access
+                        once they approve it.</span>
+                </div>
+
+                <div onkeypress="if(event.key==='Enter') handleUserSignup(event)">
+                    <div class="input-group">
+                        <i class="fa-solid fa-id-card field-icon"></i>
+                        <input type="text" id="user-name" placeholder="Full Name" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-envelope field-icon"></i>
+                        <input type="email" id="user-email" placeholder="Email Address" autocomplete="off">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 8px;">
+                        <i class="fa-solid fa-lock field-icon"></i>
+                        <input type="password" id="user-password" placeholder="Create a Password"
+                            autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
+                        <i class="fa-solid fa-eye show-pwd-icon" onclick="togglePassword('user-password', this)"></i>
+                    </div>
+
+                    <div id="password-strength-container" style="display: none; margin-bottom: 20px;">
+                        <div
+                            style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 4px;">
+                            <div id="strength-bar"
+                                style="height: 100%; width: 0%; background: #e74c3c; transition: all 0.3s ease;"></div>
+                        </div>
+                        <div id="strength-text"
+                            style="font-size: 0.78rem; text-align: right; opacity: 0.7; font-weight: 600;">Strength:
+                            Weak</div>
+                    </div>
+
+                    <div class="section-divider">Access Request Details</div>
+
+                    <div class="input-group">
+                        <i class="fa-solid fa-tag field-icon"></i>
+                        <input type="text" id="user-request-type"
+                            placeholder="Request Type  (e.g. Storage Upgrade, Team Access)">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-comment-dots field-icon top-align"></i>
+                        <textarea id="user-reason"
+                            placeholder="Briefly explain why you need access to CloudHub..."></textarea>
+                    </div>
+
+                    <button type="button" class="submit-btn" id="user-submit-btn" onclick="handleUserSignup(event)">
+                        <i class="fa-solid fa-paper-plane"></i> Submit Access Request
+                    </button>
+                    <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
+                </div>
+            </div>
+
+            <!-- ===== SCREEN 3: Pending Approval ===== -->
+            <div class="login-card" id="screen-pending" style="display:none;">
+                <div class="pending-icon-wrap">
+                    <i class="fa-solid fa-hourglass-half" style="font-size:2.5rem;color:#65ad88;"></i>
+                </div>
+                <h2>Request Submitted!</h2>
+                <p>Waiting for an administrator to review your request</p>
+
+                <div class="pending-criteria">
+                    <div class="criteria-chip done">
+                        <i class="fa-solid fa-check-circle"></i> User Role
+                    </div>
+                    <div class="criteria-chip done">
+                        <i class="fa-solid fa-check-circle"></i> Login Limit
+                    </div>
+                    <div class="criteria-chip done">
+                        <i class="fa-solid fa-check-circle"></i> Reason Provided
+                    </div>
+                    <div class="criteria-chip pending-anim">
+                        <i class="fa-solid fa-spinner"></i> Admin Approval
+                    </div>
+                </div>
+
+                <p style="font-size:0.87rem;opacity:0.72;margin-top:0;">
+                    Submitted as <strong id="pending-name-display">-</strong>.<br>
+                    Once approved, click below to enter the dashboard.
+                </p>
+
+                <button type="button" class="submit-btn" style="margin-top:22px;" onclick="checkApprovalStatus()">
+                    <i class="fa-solid fa-rotate"></i> Check Approval Status
+                </button>
+                <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Start Over</button>
+            </div>
+
+        </div>
+
+        <!-- Custom UI Modal System -->
+        <div class="custom-modal-overlay" id="custom-modal">
+            <div class="custom-modal-card">
+                <h3 id="modal-title">Prompt</h3>
+                <p id="modal-desc">Description goes here</p>
+                <input type="text" id="modal-input" style="display: none;" placeholder="Type here...">
+                <div class="modal-actions">
+                    <button class="btn btn-white" id="modal-cancel">Cancel</button>
+                    <button id="modal-confirm" class="btn btn-primary"
+                        style="background:linear-gradient(135deg,#00b09b,#96c93d);border:none;color:white;font-weight:600;">Confirm</button>
+                </div>
             </div>
         </div>
 
-        <!-- ===== SCREEN 3: Pending Approval ===== -->
-        <div class="login-card" id="screen-pending" style="display:none;">
-            <div class="pending-icon-wrap">
-                <i class="fa-solid fa-hourglass-half" style="font-size:2.5rem;color:#65ad88;"></i>
-            </div>
-            <h2>Request Submitted!</h2>
-            <p>Waiting for an administrator to review your request</p>
-
-            <div class="pending-criteria">
-                <div class="criteria-chip done">
-                    <i class="fa-solid fa-check-circle"></i> User Role
-                </div>
-                <div class="criteria-chip done">
-                    <i class="fa-solid fa-check-circle"></i> Login Limit
-                </div>
-                <div class="criteria-chip done">
-                    <i class="fa-solid fa-check-circle"></i> Reason Provided
-                </div>
-                <div class="criteria-chip pending-anim">
-                    <i class="fa-solid fa-spinner"></i> Admin Approval
-                </div>
-            </div>
-
-            <p style="font-size:0.87rem;opacity:0.72;margin-top:0;">
-                Submitted as <strong id="pending-name-display">-</strong>.<br>
-                Once approved, click below to enter the dashboard.
-            </p>
-
-            <button type="button" class="submit-btn" style="margin-top:22px;" onclick="checkApprovalStatus()">
-                <i class="fa-solid fa-rotate"></i> Check Approval Status
-            </button>
-            <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Start Over</button>
+        <!-- Error Toast -->
+        <div id="toast-error"
+            style="display:none;position:fixed;top:25px;left:50%;transform:translateX(-50%);background:rgba(25,20,38,0.9);backdrop-filter:blur(16px);border:1px solid rgba(231,76,60,0.6);box-shadow:0 15px 35px rgba(0,0,0,0.3);color:#f8f9fa;padding:13px 26px;border-radius:14px;font-family:var(--font-main);font-weight:500;z-index:1000;animation:slideDown 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
+            <i class="fa-solid fa-shield-halved" style="margin-right:10px;color:#e74c3c;"></i>
+            <span id="toast-error-text">Access Denied!</span>
         </div>
 
-    </div>
-
-    <!-- Custom UI Modal System -->
-    <div class="custom-modal-overlay" id="custom-modal">
-        <div class="custom-modal-card">
-            <h3 id="modal-title">Prompt</h3>
-            <p id="modal-desc">Description goes here</p>
-            <input type="text" id="modal-input" style="display: none;" placeholder="Type here...">
-            <div class="modal-actions">
-                <button class="btn btn-white" id="modal-cancel">Cancel</button>
-                <button id="modal-confirm" class="btn btn-primary"
-                    style="background:linear-gradient(135deg,#00b09b,#96c93d);border:none;color:white;font-weight:600;">Confirm</button>
-            </div>
+        <!-- Success Toast -->
+        <div id="toast-success"
+            style="display:none;position:fixed;top:25px;left:50%;transform:translateX(-50%);background:rgba(18,38,28,0.9);backdrop-filter:blur(16px);border:1px solid rgba(46,204,113,0.55);box-shadow:0 15px 35px rgba(0,0,0,0.3);color:#f8f9fa;padding:13px 26px;border-radius:14px;font-family:var(--font-main);font-weight:500;z-index:1000;animation:slideDown 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
+            <i class="fa-solid fa-check-circle" style="margin-right:10px;color:#2ecc71;"></i>
+            <span id="toast-success-text">Success!</span>
         </div>
-    </div>
 
-    <!-- Error Toast -->
-    <div id="toast-error"
-        style="display:none;position:fixed;top:25px;left:50%;transform:translateX(-50%);background:rgba(25,20,38,0.9);backdrop-filter:blur(16px);border:1px solid rgba(231,76,60,0.6);box-shadow:0 15px 35px rgba(0,0,0,0.3);color:#f8f9fa;padding:13px 26px;border-radius:14px;font-family:var(--font-main);font-weight:500;z-index:1000;animation:slideDown 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
-        <i class="fa-solid fa-shield-halved" style="margin-right:10px;color:#e74c3c;"></i>
-        <span id="toast-error-text">Access Denied!</span>
-    </div>
+        <style>
+            @keyframes slideDown {
+                from {
+                    top: -60px;
+                    opacity: 0;
+                }
 
-    <!-- Success Toast -->
-    <div id="toast-success"
-        style="display:none;position:fixed;top:25px;left:50%;transform:translateX(-50%);background:rgba(18,38,28,0.9);backdrop-filter:blur(16px);border:1px solid rgba(46,204,113,0.55);box-shadow:0 15px 35px rgba(0,0,0,0.3);color:#f8f9fa;padding:13px 26px;border-radius:14px;font-family:var(--font-main);font-weight:500;z-index:1000;animation:slideDown 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
-        <i class="fa-solid fa-check-circle" style="margin-right:10px;color:#2ecc71;"></i>
-        <span id="toast-success-text">Success!</span>
-    </div>
+                to {
+                    top: 22px;
+                    opacity: 1;
+                }
+            }
+        </style>
 
-    <style>
-        @keyframes slideDown {
-            from {
-                top: -60px;
-                opacity: 0;
+        <script>
+            const API_BASE = (window.location.protocol === 'file:' || window.location.origin === 'null') ? 'http://localhost:5000/api' : window.location.origin + '/api';
+            let pendingUserId = null;
+
+            /* ---- Screen Navigation ---- */
+            function showScreen(name) {
+                ['roles', 'admin', 'user-login', 'user', 'pending'].forEach(s =>
+                    document.getElementById('screen-' + s).style.display = 'none'
+                );
+                document.getElementById('screen-' + name).style.display = 'block';
             }
 
-            to {
-                top: 22px;
-                opacity: 1;
-            }
-        }
-    </style>
-
-    <script>
-        const API_BASE = (window.location.protocol === 'file:' || window.location.origin === 'null') ? 'http://localhost:5000/api' : window.location.origin + '/api';
-        let pendingUserId = null;
-
-        /* ---- Screen Navigation ---- */
-        function showScreen(name) {
-            ['roles', 'admin', 'user-login', 'user', 'pending'].forEach(s =>
-                document.getElementById('screen-' + s).style.display = 'none'
-            );
-            document.getElementById('screen-' + name).style.display = 'block';
-        }
-
-        function goBackToRoles() {
-            showScreen('roles');
-        }
-
-        function togglePassword(inputId, iconElement) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                iconElement.classList.replace('fa-eye', 'fa-eye-slash');
-            } else {
-                input.type = 'password';
-                iconElement.classList.replace('fa-eye-slash', 'fa-eye');
-            }
-        }
-
-        /* ---- Password Strength Checker ---- */
-        function checkPasswordStrength(password) {
-            const container = document.getElementById('password-strength-container');
-            if (password.length === 0) {
-                container.style.display = 'none';
-                return;
-            }
-            container.style.display = 'block';
-
-            let strength = 0;
-            if (password.length >= 8) strength += 25;
-            if (password.match(/[A-Z]/)) strength += 25;
-            if (password.match(/[0-9]/)) strength += 25;
-            if (password.match(/[^A-Za-z0-9]/)) strength += 25;
-
-            const bar = document.getElementById('strength-bar');
-            const text = document.getElementById('strength-text');
-            bar.style.width = strength + '%';
-
-            if (strength <= 25) {
-                bar.style.background = '#e74c3c';
-                text.innerText = 'Strength: Weak';
-                text.style.color = '#e74c3c';
-            } else if (strength <= 50) {
-                bar.style.background = '#f39c12';
-                text.innerText = 'Strength: Fair';
-                text.style.color = '#f39c12';
-            } else if (strength <= 75) {
-                bar.style.background = '#3498db';
-                text.innerText = 'Strength: Good';
-                text.style.color = '#3498db';
-            } else {
-                bar.style.background = '#2ecc71';
-                text.innerText = 'Strength: Strong';
-                text.style.color = '#2ecc71';
-            }
-        }
-
-        /* ---- Custom UI Modal Engine ---- */
-        function showModal({ title, desc, showInput = false, defaultValue = '', onConfirm }) {
-            const modal = document.getElementById('custom-modal');
-            const titleEl = document.getElementById('modal-title');
-            const descEl = document.getElementById('modal-desc');
-            const inputEl = document.getElementById('modal-input');
-            const cancelBtn = document.getElementById('modal-cancel');
-            const confirmBtn = document.getElementById('modal-confirm');
-
-            titleEl.innerText = title;
-            descEl.innerText = desc;
-
-            inputEl.value = defaultValue;
-            inputEl.style.display = showInput ? 'block' : 'none';
-
-            modal.classList.add('active');
-            if (showInput) inputEl.focus();
-
-            const cleanup = () => {
-                modal.classList.remove('active');
-                cancelBtn.onclick = null;
-                confirmBtn.onclick = null;
-            };
-
-            cancelBtn.onclick = cleanup;
-
-            confirmBtn.onclick = () => {
-                const val = inputEl.value;
-                cleanup();
-                onConfirm(showInput ? val : null);
-            };
-        }
-
-        /* ---- Toast Helpers ---- */
-        function showToast(type, msg) {
-            const el = document.getElementById('toast-' + type);
-            document.getElementById('toast-' + type + '-text').innerText = msg;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 3800);
-        }
-
-        /* ---- ADMIN LOGIN ---- */
-        function handleAdminAuth(event) {
-            if (event) event.preventDefault();
-            const email = document.getElementById('admin-email').value.toLowerCase().trim();
-
-            if (email !== 'anushakpramod24@gmail.com' && email !== 'vishnupriyapt29@gmail.com') {
-                showToast('error', 'Access Denied: Invalid Administrator Credentials');
-                const pwd = document.getElementById('admin-password');
-                pwd.value = '';
-                pwd.blur();
-                document.getElementById('admin-email').focus();
-                return;
+            function goBackToRoles() {
+                showScreen('roles');
             }
 
-            const btn = document.getElementById('admin-submit-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
-
-            setTimeout(() => {
-                const uid = email.includes('vishnupriya') ? 2 : 1;
-                localStorage.setItem('cloudhub_role', 'admin');
-                localStorage.setItem('cloudhub_uid', uid);
-                window.location.href = `index.html?role=admin&uid=${uid}&t=${Date.now()}`;
-            }, 800);
-        }
-
-        /* ---- USER SIGN-UP + AUTO REQUEST ---- */
-        async function handleUserSignup(event) {
-            if (event) event.preventDefault();
-
-            const name = document.getElementById('user-name').value.trim();
-            const email = document.getElementById('user-email').value.toLowerCase().trim();
-            const pwd = document.getElementById('user-password').value;
-            const reqType = document.getElementById('user-request-type').value.trim();
-            const reason = document.getElementById('user-reason').value.trim();
-
-            if (!name) { showToast('error', 'Please enter your full name.'); return; }
-            if (!email || !email.includes('@')) { showToast('error', 'Please enter a valid email address.'); return; }
-            if (!pwd || pwd.length < 4) { showToast('error', 'Password must be at least 4 characters long.'); return; }
-            if (!reason) { showToast('error', 'Please provide a reason for your access request.'); return; }
-
-            const btn = document.getElementById('user-submit-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE}/user/signup`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name,
-                        email,
-                        password: pwd,
-                        request_type: reqType || 'General Access',
-                        reason
-                    })
-                });
-
-                const result = await res.json();
-
-                if (result.status === 'success') {
-                    pendingUserId = result.data.user_id;
-                    document.getElementById('pending-name-display').textContent = name;
-                    showScreen('pending');
-                    showToast('success', 'Request submitted! Awaiting admin approval.');
-                    
-                    // Reset the form fields precisely so reopening it exhibits a blank slate
-                    document.getElementById('user-name').value = '';
-                    document.getElementById('user-email').value = '';
-                    document.getElementById('user-password').value = '';
-                    document.getElementById('user-request-type').value = '';
-                    document.getElementById('user-reason').value = '';
-                    checkPasswordStrength(''); // Reset the UI bar
-                    
-                    // Reset the button
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
-                    btn.disabled = false;
-                    
-                    // Execute a hard browser refresh sequence as requested
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2500);
-                } else if (result.status === 'already_accepted') {
-                    showToast('error', result.message);
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
-                    btn.disabled = false;
+            function togglePassword(inputId, iconElement) {
+                const input = document.getElementById(inputId);
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    iconElement.classList.replace('fa-eye', 'fa-eye-slash');
                 } else {
-                    showToast('error', result.message || 'Signup failed. Please try again.');
+                    input.type = 'password';
+                    iconElement.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            }
+
+            /* ---- Password Strength Checker ---- */
+            function checkPasswordStrength(password) {
+                const container = document.getElementById('password-strength-container');
+                if (password.length === 0) {
+                    container.style.display = 'none';
+                    return;
+                }
+                container.style.display = 'block';
+
+                let strength = 0;
+                if (password.length >= 8) strength += 25;
+                if (password.match(/[A-Z]/)) strength += 25;
+                if (password.match(/[0-9]/)) strength += 25;
+                if (password.match(/[^A-Za-z0-9]/)) strength += 25;
+
+                const bar = document.getElementById('strength-bar');
+                const text = document.getElementById('strength-text');
+                bar.style.width = strength + '%';
+
+                if (strength <= 25) {
+                    bar.style.background = '#e74c3c';
+                    text.innerText = 'Strength: Weak';
+                    text.style.color = '#e74c3c';
+                } else if (strength <= 50) {
+                    bar.style.background = '#f39c12';
+                    text.innerText = 'Strength: Fair';
+                    text.style.color = '#f39c12';
+                } else if (strength <= 75) {
+                    bar.style.background = '#3498db';
+                    text.innerText = 'Strength: Good';
+                    text.style.color = '#3498db';
+                } else {
+                    bar.style.background = '#2ecc71';
+                    text.innerText = 'Strength: Strong';
+                    text.style.color = '#2ecc71';
+                }
+            }
+
+            /* ---- Custom UI Modal Engine ---- */
+            function showModal({ title, desc, showInput = false, defaultValue = '', onConfirm }) {
+                const modal = document.getElementById('custom-modal');
+                const titleEl = document.getElementById('modal-title');
+                const descEl = document.getElementById('modal-desc');
+                const inputEl = document.getElementById('modal-input');
+                const cancelBtn = document.getElementById('modal-cancel');
+                const confirmBtn = document.getElementById('modal-confirm');
+
+                titleEl.innerText = title;
+                descEl.innerText = desc;
+
+                inputEl.value = defaultValue;
+                inputEl.style.display = showInput ? 'block' : 'none';
+
+                modal.classList.add('active');
+                if (showInput) inputEl.focus();
+
+                const cleanup = () => {
+                    modal.classList.remove('active');
+                    cancelBtn.onclick = null;
+                    confirmBtn.onclick = null;
+                };
+
+                cancelBtn.onclick = cleanup;
+
+                confirmBtn.onclick = () => {
+                    const val = inputEl.value;
+                    cleanup();
+                    onConfirm(showInput ? val : null);
+                };
+            }
+
+            /* ---- Toast Helpers ---- */
+            function showToast(type, msg) {
+                const el = document.getElementById('toast-' + type);
+                document.getElementById('toast-' + type + '-text').innerText = msg;
+                el.style.display = 'block';
+                setTimeout(() => el.style.display = 'none', 3800);
+            }
+
+            /* ---- ADMIN LOGIN ---- */
+            function handleAdminAuth(event) {
+                if (event) event.preventDefault();
+                const email = document.getElementById('admin-email').value.toLowerCase().trim();
+
+                if (email !== 'anushakpramod24@gmail.com' && email !== 'vishnupriyapt29@gmail.com') {
+                    showToast('error', 'Access Denied: Invalid Administrator Credentials');
+                    const pwd = document.getElementById('admin-password');
+                    pwd.value = '';
+                    pwd.blur();
+                    document.getElementById('admin-email').focus();
+                    return;
+                }
+
+                const btn = document.getElementById('admin-submit-btn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+
+                setTimeout(() => {
+                    const uid = email.includes('vishnupriya') ? 2 : 1;
+                    localStorage.setItem('cloudhub_role', 'admin');
+                    localStorage.setItem('cloudhub_uid', uid);
+                    window.location.href = `index.html?role=admin&uid=${uid}&t=${Date.now()}`;
+                }, 800);
+            }
+
+            /* ---- USER SIGN-UP + AUTO REQUEST ---- */
+            async function handleUserSignup(event) {
+                if (event) event.preventDefault();
+
+                const name = document.getElementById('user-name').value.trim();
+                const email = document.getElementById('user-email').value.toLowerCase().trim();
+                const pwd = document.getElementById('user-password').value;
+                const reqType = document.getElementById('user-request-type').value.trim();
+                const reason = document.getElementById('user-reason').value.trim();
+
+                if (!name) { showToast('error', 'Please enter your full name.'); return; }
+                if (!email || !email.includes('@')) { showToast('error', 'Please enter a valid email address.'); return; }
+                if (!pwd || pwd.length < 4) { showToast('error', 'Password must be at least 4 characters long.'); return; }
+                if (!reason) { showToast('error', 'Please provide a reason for your access request.'); return; }
+
+                const btn = document.getElementById('user-submit-btn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch(`${API_BASE}/user/signup`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name,
+                            email,
+                            password: pwd,
+                            request_type: reqType || 'General Access',
+                            reason
+                        })
+                    });
+
+                    const result = await res.json();
+
+                    if (result.status === 'success') {
+                        pendingUserId = result.data.user_id;
+                        document.getElementById('pending-name-display').textContent = name;
+                        showScreen('pending');
+                        showToast('success', 'Request submitted! Awaiting admin approval.');
+
+                        // Reset the form fields precisely so reopening it exhibits a blank slate
+                        document.getElementById('user-name').value = '';
+                        document.getElementById('user-email').value = '';
+                        document.getElementById('user-password').value = '';
+                        document.getElementById('user-request-type').value = '';
+                        document.getElementById('user-reason').value = '';
+                        checkPasswordStrength(''); // Reset the UI bar
+
+                        // Reset the button
+                        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
+                        btn.disabled = false;
+
+                        // Execute a hard browser refresh sequence as requested
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2500);
+                    } else if (result.status === 'already_accepted') {
+                        showToast('error', result.message);
+                        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
+                        btn.disabled = false;
+                    } else {
+                        showToast('error', result.message || 'Signup failed. Please try again.');
+                        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
+                        btn.disabled = false;
+                    }
+                } catch (e) {
+                    showToast('error', 'Server offline — run: python app.py');
                     btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
                     btn.disabled = false;
                 }
-            } catch (e) {
-                showToast('error', 'Server offline — run: python app.py');
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Access Request';
-                btn.disabled = false;
             }
-        }
 
-        /* ---- USER LOGIN ---- */
-        async function handleUserLogin(event) {
-            if (event) event.preventDefault();
+            /* ---- USER LOGIN ---- */
+            async function handleUserLogin(event) {
+                if (event) event.preventDefault();
 
-            const email = document.getElementById('user-login-email').value.toLowerCase().trim();
-            const pwd = document.getElementById('user-login-password').value;
+                const email = document.getElementById('user-login-email').value.toLowerCase().trim();
+                const pwd = document.getElementById('user-login-password').value;
 
-            if (!email || !pwd) { showToast('error', 'Please enter your email and password.'); return; }
+                if (!email || !pwd) { showToast('error', 'Please enter your email and password.'); return; }
 
-            const btn = document.getElementById('user-login-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
-            btn.disabled = true;
+                const btn = document.getElementById('user-login-btn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+                btn.disabled = true;
 
-            try {
-                const res = await fetch(`${API_BASE}/user/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password: pwd })
-                });
+                try {
+                    const res = await fetch(`${API_BASE}/user/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password: pwd })
+                    });
 
-                const result = await res.json();
+                    const result = await res.json();
 
-                if (result.status === 'success') {
-                    // Set credentials immediately to avoid race conditions with app.js on the dashboard
-                    localStorage.setItem('cloudhub_role', 'user');
-                    localStorage.setItem('cloudhub_uid', result.data.user_id);
-                    
-                    showToast('success', 'Login successful! Redirecting to your dashboard...');
-                    
-                    setTimeout(() => {
-                        window.location.href = `index.html?role=user&uid=${result.data.user_id}&t=${Date.now()}`; 
-                    }, 800);
-                } else {
-                    showToast('error', result.message || 'Login failed.');
-                    document.getElementById('user-login-password').value = '';
+                    if (result.status === 'success') {
+                        // Set credentials immediately to avoid race conditions with app.js on the dashboard
+                        localStorage.setItem('cloudhub_role', 'user');
+                        localStorage.setItem('cloudhub_uid', result.data.user_id);
+
+                        showToast('success', 'Login successful! Redirecting to your dashboard...');
+
+                        setTimeout(() => {
+                            window.location.href = `index.html?role=user&uid=${result.data.user_id}&t=${Date.now()}`;
+                        }, 800);
+                    } else {
+                        showToast('error', result.message || 'Login failed.');
+                        document.getElementById('user-login-password').value = '';
+                        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In as User';
+                        btn.disabled = false;
+                    }
+                } catch (e) {
+                    showToast('error', 'Server offline — run: python app.py');
                     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In as User';
                     btn.disabled = false;
                 }
-            } catch (e) {
-                showToast('error', 'Server offline — run: python app.py');
-                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In as User';
+            }
+
+            /* ---- CHECK APPROVAL STATUS ---- */
+            async function checkApprovalStatus() {
+                if (!pendingUserId) {
+                    showToast('error', 'Session lost. Please sign up again.');
+                    return;
+                }
+                const btn = document.querySelector('#screen-pending .submit-btn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch(`${API_BASE}/user/status/${pendingUserId}`);
+                    const result = await res.json();
+
+                    if (result.status === 'success') {
+                        const s = result.data.request_status;
+                        if (s === 'accepted') {
+                            showToast('success', 'Approved! Redirecting to your dashboard...');
+                            setTimeout(() => {
+                                localStorage.setItem('cloudhub_role', 'user');
+                                localStorage.setItem('cloudhub_uid', pendingUserId);
+                                window.location.href = `index.html?role=user&uid=${pendingUserId}`;
+                            }, 1400);
+                            return;
+                        } else if (s === 'rejected') {
+                            showToast('error', 'Your request was rejected by the admin.');
+                        } else {
+                            showToast('error', 'Still pending — please wait for admin review.');
+                        }
+                    } else {
+                        showToast('error', 'Could not fetch your status. Try again shortly.');
+                    }
+                } catch (e) {
+                    showToast('error', 'Server offline — run: python app.py');
+                }
+
+                btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Check Approval Status';
                 btn.disabled = false;
             }
-        }
-
-        /* ---- CHECK APPROVAL STATUS ---- */
-        async function checkApprovalStatus() {
-            if (!pendingUserId) {
-                showToast('error', 'Session lost. Please sign up again.');
-                return;
-            }
-            const btn = document.querySelector('#screen-pending .submit-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE}/user/status/${pendingUserId}`);
-                const result = await res.json();
-
-                if (result.status === 'success') {
-                    const s = result.data.request_status;
-                    if (s === 'accepted') {
-                        showToast('success', 'Approved! Redirecting to your dashboard...');
-                        setTimeout(() => {
-                            localStorage.setItem('cloudhub_role', 'user');
-                            localStorage.setItem('cloudhub_uid', pendingUserId);
-                            window.location.href = `index.html?role=user&uid=${pendingUserId}`;
-                        }, 1400);
-                        return;
-                    } else if (s === 'rejected') {
-                        showToast('error', 'Your request was rejected by the admin.');
-                    } else {
-                        showToast('error', 'Still pending — please wait for admin review.');
-                    }
-                } else {
-                    showToast('error', 'Could not fetch your status. Try again shortly.');
-                }
-            } catch (e) {
-                showToast('error', 'Server offline — run: python app.py');
-            }
-
-            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Check Approval Status';
-            btn.disabled = false;
-        }
-    </script>
-        </div> <!-- end login-container -->
+        </script>
+    </div> <!-- end login-container -->
     </div> <!-- end login-wrapper -->
 </body>
+
 </html>

@@ -3,156 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudHub | Public Files</title>
+    <title>CloudHub | Public Community</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
         body {
-            background-color: var(--bg-dark);
+            background-color: var(--bg-deep);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow-y: auto;
         }
 
         .public-container {
             width: 100%;
-            max-width: 1000px;
-            margin-top: 40px;
-            padding: 20px;
+            max-width: 1200px;
+            margin-top: 50px;
+            padding: 30px;
+            z-index: 10;
         }
 
         .header-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
         }
 
         .home-btn {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 14px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            transition: all 0.3s ease;
+            gap: 12px;
+            font-weight: 600;
+            transition: var(--transition);
         }
 
         .home-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            transform: translateX(-5px);
         }
 
         h1 {
-            font-size: 2.2rem;
+            font-size: 3rem;
             color: white;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
         }
         
         .subtitle {
             text-align: center;
             color: var(--text-muted);
-            margin-bottom: 40px;
+            margin-bottom: 60px;
+            font-size: 1.1rem;
         }
 
         .public-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
         }
 
         .file-card {
-            background: var(--card-bg);
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.3s ease;
+            border-radius: 20px;
+            padding: 30px;
+            transition: var(--transition);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-card::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 100px; height: 100px;
+            background: radial-gradient(circle at top right, var(--primary-glow), transparent 70%);
+            opacity: 0.1;
         }
 
         .file-card:hover {
-            border-color: var(--secondary);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px var(--secondary-glow);
+            border-color: var(--primary);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(139, 92, 246, 0.1);
+            background: var(--bg-hover);
         }
 
         .file-icon {
-            font-size: 2.5rem;
-            color: var(--primary);
-            text-align: center;
+            font-size: 3.5rem;
             margin-bottom: 10px;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.05));
         }
 
         .file-name {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 1.3rem;
+            font-weight: 700;
             color: white;
-            text-align: center;
             word-break: break-all;
+            margin-bottom: 5px;
+            min-height: 40px;
         }
 
-        .file-meta {
+        .file-owner-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 10px;
             font-size: 0.85rem;
-            color: var(--text-muted);
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .file-meta-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
         .view-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 14px;
             cursor: pointer;
-            margin-top: 15px;
-            font-weight: 600;
-            transition: background 0.3s;
+            margin-top: 20px;
+            font-weight: 700;
+            transition: var(--transition);
             text-decoration: none;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px var(--primary-glow);
         }
 
         .view-btn:hover {
             background: var(--primary-dark);
+            box-shadow: 0 12px 30px var(--primary-glow);
+            transform: scale(1.02);
         }
 
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 100px 20px;
             color: var(--text-muted);
             grid-column: 1 / -1;
         }
 
         .empty-state i {
-             font-size: 4rem;
-             margin-bottom: 20px;
+             font-size: 6rem;
+             margin-bottom: 30px;
              color: var(--border);
+        }
+
+        .glow-sphere {
+            position: absolute;
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(100px);
+            opacity: 0.3;
+            top: -300px; left: -300px;
         }
     </style>
 </head>
 <body>
+    <div class="glow-sphere"></div>
     <div class="public-container">
         <div class="header-actions">
-            <a href="home.html" class="home-btn"><i class="fa-solid fa-arrow-left"></i> Go Back to Home</a>
+            <a href="home.html" class="home-btn"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
         </div>
         
-        <h1><i class="fa-solid fa-globe" style="color: var(--primary);"></i> Public Community Files</h1>
-        <p class="subtitle">Explore and download files shared publicly by our users.</p>
+        <h1>Public Discovery</h1>
+        <p class="subtitle">Securely shared files globally by the CloudHub community.</p>
 
         <div class="public-grid" id="public-files-grid">
             <div class="empty-state">
                 <i class="fa-solid fa-spinner fa-spin"></i>
-                <h3 style="color: white; margin-top: 15px;">Loading Public Files...</h3>
+                <h3 style="color: white; margin-top: 20px;">Scanning the Vault...</h3>
             </div>
         </div>
     </div>
@@ -172,8 +225,8 @@
                         grid.innerHTML = `
                             <div class="empty-state">
                                 <i class="fa-solid fa-folder-open"></i>
-                                <h3 style="color: white;">No Public Files Yet</h3>
-                                <p>Users haven't shared anything publicly at this time.</p>
+                                <h3 style="color: white;">The Community Hub is Quiet</h3>
+                                <p>No files have been made public yet. Check back soon!</p>
                             </div>
                         `;
                         return;
@@ -186,16 +239,14 @@
                         card.className = 'file-card';
                         card.innerHTML = `
                             <div class="file-icon">${iconHtml}</div>
+                            <div class="file-owner-pill"><i class="fa-solid fa-user-shield"></i> ${f.owner_name}</div>
                             <div class="file-name">${f.name}</div>
-                            <div class="file-meta">
-                                <span><i class="fa-solid fa-user"></i> ${f.owner_name}</span>
-                                <span>${f.size}</span>
-                            </div>
-                            <div class="file-meta" style="margin-top: 0;">
-                                <span style="font-size: 0.8rem;">Uploaded: ${f.date_modified}</span>
+                            <div class="file-meta-row">
+                                <span><i class="fa-solid fa-hard-drive"></i> ${f.size}</span>
+                                <span>${f.date_modified}</span>
                             </div>
                             <a href="${API_BASE}/files/download/${f.id}?uid=1" target="_blank" class="view-btn">
-                                <i class="fa-solid fa-download"></i> View / Download
+                                <i class="fa-solid fa-cloud-arrow-down"></i> Open File
                             </a>
                         `;
                         grid.appendChild(card);
@@ -204,9 +255,9 @@
             } catch (err) {
                 grid.innerHTML = `
                     <div class="empty-state">
-                        <i class="fa-solid fa-triangle-exclamation" style="color: #e74c3c;"></i>
-                        <h3 style="color: white;">Error Loading Files</h3>
-                        <p>Could not connect to the server.</p>
+                        <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent);"></i>
+                        <h3 style="color: white;">System Offline</h3>
+                        <p>We are currently unable to reach the file servers.</p>
                     </div>
                 `;
             }
@@ -222,7 +273,8 @@
                 'music': '<i class="fa-solid fa-file-audio" style="color:#9b59b6;"></i>',
                 'video': '<i class="fa-solid fa-file-video" style="color:#e84393;"></i>'
             };
-            return icons[iconType] || '<i class="fa-solid fa-file" style="color:#95a5a6;"></i>';
+            const i = icons[iconType] || '<i class="fa-solid fa-file" style="color:#95a5a6;"></i>';
+            return i;
         }
     </script>
 </body>

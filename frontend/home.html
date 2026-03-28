@@ -7,20 +7,21 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #65ad88;
-            --primary-dark: #37825d;
-            --primary-light: #e0f2eb;
-            --text-dark: #1f2e26;
-            --text-muted: #5b7266;
-            --bg-top: #d2efe4;
-            --bg-bottom: #f2fbf7;
-            --glass-bg: rgba(255, 255, 255, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.8);
+            --bg-deep: #0a0b0d;
+            --bg-card: #14151a;
+            --bg-hover: #1e1f26;
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --secondary: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
             --font-main: 'Outfit', sans-serif;
+            --primary-glow: rgba(139, 92, 246, 0.4);
         }
 
         * {
@@ -31,35 +32,27 @@
         }
 
         body {
-            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
-            color: var(--text-dark);
+            background-color: var(--bg-deep);
+            color: var(--text-main);
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
         }
 
-        /* Abstract Cloud Backgrounds */
-        .bg-clouds {
+        /* Ambient Glow Effects */
+        .glow-sphere {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .cloud-shape {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.4);
-            filter: blur(40px);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
             border-radius: 50%;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.5;
         }
 
-        .c1 { width: 600px; height: 600px; top: -200px; right: -100px; background: rgba(255,255,255,0.7); filter: blur(60px); }
-        .c2 { width: 400px; height: 400px; top: 30%; left: -150px; background: rgba(255,255,255,0.5); }
-        .c3 { width: 700px; height: 350px; bottom: 10%; right: -200px; background: rgba(255,255,255,0.6); }
+        .g1 { top: -200px; left: -200px; }
+        .g2 { bottom: -200px; right: -200px; background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%); }
 
         .container {
             max-width: 1200px;
@@ -74,27 +67,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.5rem 0;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 40px;
-            margin-top: 1rem;
-            padding: 0.8rem 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            padding: 1.5rem 2rem;
+            background: rgba(20, 21, 26, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            margin-top: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
         .logo {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 800;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: var(--text-dark);
+            color: var(--text-main);
             text-decoration: none;
+            letter-spacing: -0.5px;
         }
 
-        .logo i { color: var(--primary); font-size: 1.8rem; }
+        .logo i { color: var(--primary); font-size: 2rem; }
 
         .nav-links {
             display: flex;
@@ -103,18 +96,18 @@
         }
 
         .nav-links a {
-            color: var(--text-dark);
+            color: var(--text-muted);
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 500;
             font-size: 0.95rem;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .nav-links a:hover { color: var(--primary); }
 
         .btn {
             padding: 0.8rem 1.8rem;
-            border-radius: 30px;
+            border-radius: 14px;
             font-weight: 600;
             text-decoration: none;
             transition: all 0.3s;
@@ -129,12 +122,12 @@
         .btn-primary {
             background: var(--primary);
             color: white;
-            box-shadow: 0 4px 15px rgba(101, 173, 136, 0.4);
+            box-shadow: 0 8px 20px var(--primary-glow);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(101, 173, 136, 0.5);
+            box-shadow: 0 12px 30px var(--primary-glow);
             background: var(--primary-dark);
         }
 
@@ -143,106 +136,70 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 6rem 0;
+            padding: 8rem 0;
             gap: 4rem;
         }
 
-        .hero-content { flex: 1; max-width: 550px; }
+        .hero-content { flex: 1; max-width: 600px; }
         
         h1 {
-            font-size: 4rem;
+            font-size: 4.5rem;
             font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            color: var(--text-dark);
-            letter-spacing: -1px;
+            line-height: 1.05;
+            margin-bottom: 2rem;
+            color: white;
+            letter-spacing: -2px;
         }
 
         .hero-content p {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             color: var(--text-muted);
             line-height: 1.6;
-            margin-bottom: 2.5rem;
-            font-weight: 500;
+            margin-bottom: 3rem;
+            font-weight: 400;
         }
 
         .hero-img {
             flex: 1;
             position: relative;
-            height: 400px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* 3D Illustration Mockup */
-        .illus-cloud {
-            width: 250px;
-            height: 150px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 100px;
+        .illus-main {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, var(--bg-card), #1e2028);
+            border-radius: 60px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
             position: relative;
-            backdrop-filter: blur(10px);
-            border: 2px solid white;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08), inset 0 10px 20px rgba(255,255,255,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            animation: float 6s ease-in-out infinite;
         }
 
-        .illus-cloud::before {
-            content: '';
-            position: absolute;
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            top: -50px;
-            left: 30px;
-            border-top: 2px solid white;
-        }
-
-        .illus-cloud::after {
-            content: '';
-            position: absolute;
-            width: 90px;
-            height: 90px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            top: -20px;
-            right: 40px;
-            border-top: 2px solid white;
-        }
-
-        .illus-folder {
-            position: absolute;
-            bottom: -30px;
-            left: -20px;
-            font-size: 6rem;
-            filter: drop-shadow(0 15px 20px rgba(0,0,0,0.15));
-            animation: float 4s ease-in-out infinite;
-        }
-        
-        .illus-doc {
-            position: absolute;
-            top: -40px;
-            right: 0;
-            font-size: 4rem;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
-            animation: float 5s ease-in-out infinite reverse;
+        .illus-main i {
+            font-size: 8rem;
+            color: var(--primary);
+            filter: drop-shadow(0 0 20px var(--primary-glow));
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(2deg); }
         }
 
         /* Section Title */
         .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            color: var(--text-dark);
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            color: white;
+            text-align: center;
+            letter-spacing: -1px;
         }
 
         /* Key Features */
@@ -250,292 +207,179 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
-            margin-bottom: 6rem;
+            margin-bottom: 8rem;
         }
 
         .feature-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 2rem;
-            backdrop-filter: blur(16px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.5rem;
             transition: all 0.3s;
         }
 
         .feature-card:hover {
-            transform: translateY(-5px);
-            background: white;
-            box-shadow: 0 15px 35px rgba(101, 173, 136, 0.1);
+            transform: translateY(-8px);
+            background: var(--bg-hover);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
 
         .f-icon-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 1rem;
-        }
-
-        .f-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-        }
-
-        .f-icon.green { background: #d2f0e0; color: #37825d; }
-        .f-icon.blue { background: #d6eaff; color: #2980b9; }
-        .f-icon.orange { background: #ffe8cc; color: #e67e22; }
-
-        .feature-card h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 0.8rem;
-        }
-
-        .feature-card p {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        /* Two Col Bottom */
-        .bottom-layout {
-            display: grid;
-            grid-template-columns: 2fr 1.2fr;
-            gap: 3rem;
-            margin-bottom: 6rem;
-        }
-
-        /* Pricing */
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-        }
-
-        .pricing-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 1.5rem;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .pricing-card:hover {
-            background: white;
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
-        .p-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
-        .p-price { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-        .p-list { list-style: none; text-align: left; margin-bottom: 1.5rem; flex-grow: 1; }
-        .p-list li {
-            font-size: 0.85rem;
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--text-dark);
-        }
-        .p-list li i { color: var(--primary); font-size: 0.9rem; }
-        .p-list li.disabled { opacity: 0.4; }
-        .p-list li.disabled i { color: inherit; }
-
-        /* Widgets */
-        .widget {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 1.5rem;
-            backdrop-filter: blur(10px);
             margin-bottom: 1.5rem;
         }
 
-        .widget h3 { font-size: 1.1rem; margin-bottom: 1rem; }
-        .w-input {
-            width: 100%;
-            padding: 10px 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(0,0,0,0.1);
-            background: white;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
+        .f-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            background: rgba(255,255,255,0.03);
+            color: var(--primary);
+            border: 1px solid var(--border);
         }
 
-        .testimonial {
-            display: flex;
-            gap: 15px;
-            align-items: flex-start;
+        .feature-card h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: white;
         }
-        .testimonial img { width: 40px; height: 40px; border-radius: 50%; }
-        .testimonial p { font-size: 0.85rem; font-style: italic; color: var(--text-muted); line-height: 1.5; margin-bottom: 5px; }
-        .testimonial h4 { font-size: 0.85rem; font-weight: 700; }
+
+        .feature-card p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Testimonials */
+        .testimonial-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 8rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .testimonial-card::before {
+            content: '\f10d';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 6rem;
+            opacity: 0.05;
+            color: var(--primary);
+        }
+
+        .testimonial-content {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 2rem;
+            color: var(--text-main);
+        }
 
         /* Footer */
         footer {
-            border-top: 1px solid var(--glass-border);
-            padding: 4rem 0;
+            border-top: 1px solid var(--border);
+            padding: 6rem 0;
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 2rem;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 4rem;
         }
 
-        .f-col h4 { font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text-dark); }
-        .f-col a { display: block; color: var(--text-muted); text-decoration: none; margin-bottom: 0.8rem; font-size: 0.95rem; }
+        .f-col h4 { font-size: 1.1rem; margin-bottom: 2rem; color: white; text-transform: uppercase; letter-spacing: 1px; }
+        .f-col a { display: block; color: var(--text-muted); text-decoration: none; margin-bottom: 1rem; font-size: 1rem; transition: color 0.3s; }
         .f-col a:hover { color: var(--primary); }
-        .f-bottom { text-align: center; padding: 2rem 0; color: var(--text-muted); font-size: 0.9rem; }
+        .f-bottom { text-align: center; padding: 3rem 0; color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid var(--border); }
 
         @media(max-width: 900px) {
-            .hero { flex-direction: column; text-align: center; }
+            .hero { flex-direction: column; text-align: center; padding: 4rem 0; }
             .features-grid { grid-template-columns: 1fr; }
-            .bottom-layout { grid-template-columns: 1fr; }
-            .pricing-grid { grid-template-columns: 1fr 1fr; }
-            footer { grid-template-columns: 1fr 1fr; }
+            footer { grid-template-columns: 1fr; gap: 2.5rem; }
             .nav-links { display: none; }
+            h1 { font-size: 3rem; }
         }
     </style>
 </head>
 <body>
-    <div class="bg-clouds">
-        <div class="cloud-shape c1"></div>
-        <div class="cloud-shape c2"></div>
-        <div class="cloud-shape c3"></div>
-    </div>
+    <div class="glow-sphere g1"></div>
+    <div class="glow-sphere g2"></div>
 
     <div class="container">
         <!-- Header -->
         <header>
-            <a href="#" class="logo">
+            <a href="home.html" class="logo">
                 <i class="fa-solid fa-cloud-arrow-up"></i> CloudHub
             </a>
             <div class="nav-links">
-                <a href="#about">About Us</a>
+                <a href="#about">About</a>
                 <a href="#features">Features</a>
-                <a href="public_files.html">See Files</a>
-                <a href="#how">How It Works</a>
-                <a href="#testimonials">Testimonials</a>
-                <a href="login.html" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">Sign In / Register</a>
+                <a href="public_files.html" style="color: var(--secondary); font-weight: 700;"><i class="fa-solid fa-globe"></i> See Files</a>
+                <a href="login.html" class="btn btn-primary">Get Started</a>
             </div>
         </header>
 
         <!-- Hero -->
         <section class="hero">
             <div class="hero-content">
-                <h1>Store, Sync, and Share. Effortlessly.</h1>
-                <p>CloudHub is the most secure and intuitive cloud storage for your files and memories. Start for free.</p>
-                <a href="login.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">Get Started Free (50GB)</a>
+                <h1>Secure Cloud Management.</h1>
+                <p>Experience the next generation of file security. Encrypted, hyper-fast, and designed for the modern web. Your data, your rules.</p>
+                <div style="display: flex; gap: 15px;">
+                    <a href="login.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem;">Join CloudHub</a>
+                    <a href="public_files.html" class="btn" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border);">Browse Assets</a>
+                </div>
             </div>
             <div class="hero-img">
-                <div class="illus-cloud">
-                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 4rem; color: var(--primary); z-index: 10;"></i>
+                <div class="illus-main">
+                    <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <div class="illus-folder">📁</div>
-                <div class="illus-doc">📄</div>
             </div>
         </section>
 
-        <!-- About Us -->
-        <h2 class="section-title" id="about">About Us</h2>
-        <div style="margin-bottom: 5rem; background: var(--glass-bg); padding: 3rem; border-radius: 20px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px);">
-            <p style="font-size: 1.15rem; color: var(--text-muted); line-height: 1.8;">
-                CloudHub is built to revolutionize cloud storage. Our mission is to provide the most secure, intuitive, and accessible storage platform for individuals and teams around the globe. We believe that managing your digital life should be effortless and safe, without compromising on performance or design.
-            </p>
-        </div>
-
         <!-- Features -->
-        <h2 class="section-title" id="features">Key Features</h2>
+        <h2 class="section-title" id="features">Unmatched Capabilities</h2>
         <div class="features-grid">
             <div class="feature-card">
                 <div class="f-icon-wrap">
-                    <div class="f-icon green"><i class="fa-solid fa-shield-halved"></i></div>
-                    <h3>Total Security</h3>
+                    <div class="f-icon"><i class="fa-solid fa-bolt"></i></div>
                 </div>
-                <p>CloudHub uses advanced end-to-end encryption to ensure your files remain secure and private at all times.</p>
+                <h3>Atomic Speed</h3>
+                <p>Optimized data pipelines ensure your files are synced across devices in real-time with zero latency.</p>
             </div>
             <div class="feature-card">
                 <div class="f-icon-wrap">
-                    <div class="f-icon blue"><i class="fa-solid fa-globe"></i></div>
-                    <h3>Universal Access</h3>
+                    <div class="f-icon"><i class="fa-solid fa-fingerprint"></i></div>
                 </div>
-                <p>Access your files from any device, anywhere in the world. Enjoy seamless synchronization across networks.</p>
+                <h3>Zero Access</h3>
+                <p>Our end-to-end encryption means only you holds the keys. Not even us can peek at your data.</p>
             </div>
             <div class="feature-card">
                 <div class="f-icon-wrap">
-                    <div class="f-icon green"><i class="fa-solid fa-users"></i></div>
-                    <h3>Team Collaboration</h3>
+                    <div class="f-icon"><i class="fa-solid fa-microchip"></i></div>
                 </div>
-                <p>Work together efficiently with granular access controls allowing you to share files with specific team members.</p>
-            </div>
-            <div class="feature-card">
-                <div class="f-icon-wrap">
-                    <div class="f-icon orange"><i class="fa-solid fa-bolt"></i></div>
-                    <h3>Lightning Fast Sync</h3>
-                </div>
-                <p>Experience ultra-low latency uploads and downloads ensuring your workflow is never interrupted.</p>
-            </div>
-            <div class="feature-card">
-                <div class="f-icon-wrap">
-                    <div class="f-icon blue"><i class="fa-solid fa-hard-drive"></i></div>
-                    <h3>Massive Storage</h3>
-                </div>
-                <p>Scale your cloud infrastructure to meet your needs, safely storing documents, media, and archives.</p>
-            </div>
-            <div class="feature-card">
-                <div class="f-icon-wrap">
-                    <div class="f-icon green"><i class="fa-solid fa-chart-pie"></i></div>
-                    <h3>Usage Analytics</h3>
-                </div>
-                <p>Monitor your storage limits and user activity with our comprehensive built-in tracking dashboard.</p>
+                <h3>Quantum Ready</h3>
+                <p>Built using modular infrastructure that scales with your needs, from MBs to Petabytes of data.</p>
             </div>
         </div>
 
-        <!-- How it works -->
-        <h2 class="section-title" id="how">How It Works</h2>
-        <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 6rem;">
-            <div class="feature-card" style="flex: 1; min-width: 250px; background: var(--glass-bg); border-radius: 20px; padding: 2.5rem; border: 1px solid var(--glass-border);">
-                <div style="font-size: 3rem; font-weight: 800; color: var(--primary); opacity: 0.3; margin-bottom: -10px;">1</div>
-                <h3 style="font-size: 1.35rem; margin-bottom: 1rem; color: var(--text-dark);">Create an Account</h3>
-                <p style="color: var(--text-muted); line-height: 1.6; font-size: 1rem;">Sign up for free and get instant access to secure storage. Fast and effortless.</p>
+        <!-- Testimonial -->
+        <div class="testimonial-card">
+            <div class="testimonial-content">
+                "CloudHub transformed how our team manages sensitive assets. The speed and security are simply on another level compared to legacy providers."
             </div>
-            <div class="feature-card" style="flex: 1; min-width: 250px; background: var(--glass-bg); border-radius: 20px; padding: 2.5rem; border: 1px solid var(--glass-border);">
-                <div style="font-size: 3rem; font-weight: 800; color: var(--primary); opacity: 0.3; margin-bottom: -10px;">2</div>
-                <h3 style="font-size: 1.35rem; margin-bottom: 1rem; color: var(--text-dark);">Upload Your Files</h3>
-                <p style="color: var(--text-muted); line-height: 1.6; font-size: 1rem;">Drag and drop documents, photos, and media into your personal secure vault.</p>
-            </div>
-            <div class="feature-card" style="flex: 1; min-width: 250px; background: var(--glass-bg); border-radius: 20px; padding: 2.5rem; border: 1px solid var(--glass-border);">
-                <div style="font-size: 3rem; font-weight: 800; color: var(--primary); opacity: 0.3; margin-bottom: -10px;">3</div>
-                <h3 style="font-size: 1.35rem; margin-bottom: 1rem; color: var(--text-dark);">Sync and Share</h3>
-                <p style="color: var(--text-muted); line-height: 1.6; font-size: 1rem;">Access files on any device and share them securely with team members or friends.</p>
-            </div>
-        </div>
-
-        <!-- Testimonials -->
-        <h2 class="section-title" id="testimonials">Testimonials</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 6rem;">
-            <div class="widget" style="padding: 2.5rem; margin: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
-                <div class="testimonial">
-                    <div style="width:60px; height:60px; background:var(--primary-light); display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--primary); font-size:1.5rem; flex-shrink:0;"><i class="fa-solid fa-user"></i></div>
-                    <div>
-                        <p style="font-size:1rem; margin-bottom: 1rem;">"CloudHub revolutionized how our engineering team shares documentation. It's incredibly fast and the access controls are perfect."</p>
-                        <h4 style="font-size:0.95rem; color:var(--text-dark);">— Sarah Jenkins</h4>
-                    </div>
-                </div>
-            </div>
-            <div class="widget" style="padding: 2.5rem; margin: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
-                <div class="testimonial">
-                    <div style="width:60px; height:60px; background:var(--primary-light); display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--primary); font-size:1.5rem; flex-shrink:0;"><i class="fa-solid fa-building"></i></div>
-                    <div>
-                        <p style="font-size:1rem; margin-bottom: 1rem;">"A seamless, hyper-secure experience. We moved all our corporate assets to CloudHub without a single hitch."</p>
-                        <h4 style="font-size:0.95rem; color:var(--text-dark);">— TechFlow Inc.</h4>
-                    </div>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <div style="width:50px; height:50px; border-radius:15px; background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">AK</div>
+                <div>
+                    <div style="font-weight:700; color:white;">Adrian Kessler</div>
+                    <div style="color:var(--text-muted); font-size:0.9rem;">CTO, NexaSystems</div>
                 </div>
             </div>
         </div>
@@ -543,44 +387,34 @@
         <!-- Footer -->
         <footer>
             <div class="f-col">
-                <a href="#" class="logo" style="margin-bottom: 1rem;">
+                <a href="#" class="logo" style="margin-bottom: 1.5rem;">
                     <i class="fa-solid fa-cloud-arrow-up"></i> CloudHub
                 </a>
+                <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6;">The ultimate secure vault for your digital life. Built for security, designed for speed.</p>
+            </div>
+            <div class="f-col">
+                <h4>Platform</h4>
+                <a href="#">Security</a>
+                <a href="#">Speed</a>
+                <a href="public_files.html">Public Explorer</a>
+                <a href="login.html">Login</a>
             </div>
             <div class="f-col">
                 <h4>Company</h4>
-                <a href="#">About Us</a>
+                <a href="#">About</a>
                 <a href="#">Careers</a>
-                <a href="#">Activity</a>
-                <a href="#">News</a>
+                <a href="#">Legal</a>
+                <a href="#">Privacy</a>
             </div>
             <div class="f-col">
-                <h4>Features</h4>
-                <a href="#">Cloud Sync</a>
-                <a href="#">Security</a>
-                <a href="#">Pricing</a>
-                <a href="#">Access Control</a>
-            </div>
-            <div class="f-col">
-                <h4>Resources</h4>
-                <a href="#">Documentation</a>
-                <a href="#">Help Center</a>
-                <a href="#">Community</a>
-                <a href="#">FAQs</a>
-            </div>
-            <div class="f-col">
-                <h4>Legal</h4>
-                <a href="#">Terms of Service</a>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Cookie Policy</a>
-                <div style="font-size: 1.2rem; margin-top: 1rem; color: var(--primary);">
-                    <i class="fa-brands fa-facebook" style="margin-right:10px; cursor:pointer;"></i>
-                    <i class="fa-brands fa-twitter" style="margin-right:10px; cursor:pointer;"></i>
-                    <i class="fa-brands fa-linkedin" style="cursor:pointer;"></i>
-                </div>
+                <h4>Community</h4>
+                <a href="#">Discord</a>
+                <a href="#">Twitter</a>
+                <a href="#">GitHub</a>
+                <a href="#">Contact</a>
             </div>
         </footer>
-        <div class="f-bottom">CloudHub Secure Storage - 2026</div>
+        <div class="f-bottom">&copy; 2026 CloudHub Secure Infrastructure. All rights reserved.</div>
     </div>
 </body>
 </html>
