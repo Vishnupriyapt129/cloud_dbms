@@ -442,7 +442,7 @@
                 <i class="fa-solid fa-user-shield"></i>
                 <div class="btn-contents">
                     <h3>Administrator</h3>
-                    <p>Full suite access — file control and user management.</p>
+                    <p>Full suite access - file control and user management.</p>
                 </div>
             </button>
 
@@ -480,7 +480,7 @@
                         style="color:hsl(145, 20%, 88%);font-size:0.95rem;text-decoration:none;font-weight:500;">Need an
                         account? Request access</a>
                 </div>
-                <button type="button" class="back-btn" onclick="goBackToRoles()">← Back to Roles</button>
+                <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
             </form>
         </div>
 
@@ -507,7 +507,7 @@
                 <button type="submit" class="submit-btn" id="admin-submit-btn">
                     <i class="fa-solid fa-right-to-bracket"></i> Sign In as Admin
                 </button>
-                <button type="button" class="back-btn" onclick="goBackToRoles()">← Back to Roles</button>
+                <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
             </form>
         </div>
 
@@ -519,7 +519,7 @@
 
             <div class="user-form-note">
                 <i class="fa-solid fa-circle-info"></i>
-                <span>Your account is created immediately. A request is auto-sent to the admin — you'll get full access
+                <span>Your account is created immediately. A request is auto-sent to the admin - you'll get full access
                     once they approve it.</span>
             </div>
 
@@ -562,7 +562,7 @@
                 <button type="button" class="submit-btn" id="user-submit-btn" onclick="handleUserSignup(event)">
                     <i class="fa-solid fa-paper-plane"></i> Submit Access Request
                 </button>
-                <button type="button" class="back-btn" onclick="goBackToRoles()">← Back to Roles</button>
+                <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Back to Roles</button>
             </div>
         </div>
 
@@ -590,14 +590,14 @@
             </div>
 
             <p style="font-size:0.87rem;opacity:0.72;margin-top:0;">
-                Submitted as <strong id="pending-name-display">—</strong>.<br>
+                Submitted as <strong id="pending-name-display">-</strong>.<br>
                 Once approved, click below to enter the dashboard.
             </p>
 
             <button type="button" class="submit-btn" style="margin-top:22px;" onclick="checkApprovalStatus()">
                 <i class="fa-solid fa-rotate"></i> Check Approval Status
             </button>
-            <button type="button" class="back-btn" onclick="goBackToRoles()">← Start Over</button>
+            <button type="button" class="back-btn" onclick="goBackToRoles()">&larr; Start Over</button>
         </div>
 
     </div>
@@ -870,11 +870,14 @@
                 const result = await res.json();
 
                 if (result.status === 'success') {
-                    showToast('success', 'Login successful! Redirecting...');
+                    // Set credentials immediately to avoid race conditions with app.js on the dashboard
+                    localStorage.setItem('cloudhub_role', 'user');
+                    localStorage.setItem('cloudhub_uid', result.data.user_id);
+                    
+                    showToast('success', 'Login successful! Redirecting to your dashboard...');
+                    
                     setTimeout(() => {
-                        localStorage.setItem('cloudhub_role', 'user');
-                        localStorage.setItem('cloudhub_uid', result.data.user_id);
-                        window.location.href = `index.html?role=user&uid=${result.data.user_id}`;
+                        window.location.href = 'index.html'; 
                     }, 800);
                 } else {
                     showToast('error', result.message || 'Login failed.');

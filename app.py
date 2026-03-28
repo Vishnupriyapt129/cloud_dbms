@@ -49,7 +49,7 @@ DB_CONFIG = {
 def get_db_connection():
     try:
         connection = pymysql.connect(**DB_CONFIG)
-        print("✅ DB Connected")
+        print("DB Connected")
         return connection
     except pymysql.MySQLError as e:
         print(f"Error connecting to MySQL: {e}")
@@ -81,7 +81,10 @@ def index():
 
 @app.route('/api/user', methods=['GET'])
 def get_user_profile():
-    user_id = int(request.headers.get('Authorization', 1) or 1)
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"status": "error", "message": "Authentication required. Please log in."}), 401
+    user_id = int(auth_header)
     conn = get_db_connection()
     if not conn:
         return jsonify({"status": "error", "message": "Database connection failed"}), 500
@@ -121,7 +124,11 @@ def get_user_profile():
 
 @app.route('/api/folders', methods=['GET'])
 def get_folders():
-    user_id = int(request.headers.get('Authorization', 1) or 1)
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        # Fallback for initialization if needed, but safer to return 401
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    user_id = int(auth_header)
     # Check if admin is requesting another user's folders
     owner_id_param = request.args.get('owner_id')
     
@@ -152,7 +159,9 @@ def get_folders():
 
 @app.route('/api/folders', methods=['POST'])
 def create_folder():
-    user_id = int(request.headers.get('Authorization', 1) or 1)
+    auth_header = request.headers.get('Authorization')
+    if not auth_header: return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    user_id = int(auth_header)
     data = request.json
     if not data or 'name' not in data:
         return jsonify({"status": "error", "message": "Invalid payload."}), 400
@@ -181,7 +190,9 @@ def create_folder():
 
 @app.route('/api/files', methods=['GET'])
 def get_files():
-    user_id   = int(request.headers.get('Authorization', 1) or 1)
+    auth_header = request.headers.get('Authorization')
+    if not auth_header: return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    user_id = int(auth_header)
     folder_id = request.args.get('folder_id')
     conn = get_db_connection()
     if not conn:
@@ -230,7 +241,7 @@ def get_files():
     for f in files:
         f['id'] = str(f['id'])
         raw = f.pop('date_raw', None)
-        f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '—'
+        f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '-'
     cursor.close()
     conn.close()
     return jsonify({"status": "success", "data": files}), 200
@@ -278,7 +289,7 @@ def upload_file():
     if not conn:
         return jsonify({"status": "error", "message": "DB Error"}), 500
 
-    # Read the file bytes before saving — needed for DB BLOB storage
+    # Read the file bytes before saving - needed for DB BLOB storage
     file_bytes = file.read()
     file.seek(0)
 
@@ -371,7 +382,7 @@ def download_file(file_id):
     }
     is_safe_inline = mime_type in safe_inline_types and ext not in blocked_inline_exts
 
-    # ── PRIMARY: serve from DB BLOB (works on Render after restart) ──────────
+    # -- PRIMARY: serve from DB BLOB (works on Render after restart) ----------
     file_data = f.get('file_data')
     if file_data:
         from flask import Response
@@ -386,7 +397,7 @@ def download_file(file_id):
             response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
-    # ── FALLBACK: try filesystem (legacy files / local dev) ──────────────────
+    # -- FALLBACK: try filesystem (legacy files / local dev) ------------------
     file_path = os.path.join(UPLOAD_FOLDER, f"{file_id}_{filename}")
     if os.path.exists(file_path):
         if is_safe_inline:
@@ -400,7 +411,7 @@ def download_file(file_id):
             return send_from_directory(UPLOAD_FOLDER, f"{file_id}_{filename}",
                                        as_attachment=True, download_name=filename)
 
-    # ── NEITHER source available ─────────────────────────────────────────────
+    # -- NEITHER source available ---------------------------------------------
     return f"""
     <!DOCTYPE html><html><head><title>File Not Available</title>
     <style>
@@ -480,7 +491,7 @@ def delete_file(file_id):
     return jsonify({"status": "success", "message": "File deleted."}), 200
 
 # ---------------------------------------------------------
-# ACCESS CONTROL  (uses: access_control — access_id, user_id, file_id, permission)
+# ACCESS CONTROL  (uses: access_control - access_id, user_id, file_id, permission)
 # ---------------------------------------------------------
 
 @app.route('/api/access-control/<file_id>', methods=['GET'])
@@ -610,7 +621,7 @@ def get_activity_logs():
             a.log_id AS id,
             us.username AS user_name,
             a.action,
-            COALESCE(f.filename, a.action_desc, '—') AS target,
+            COALESCE(f.filename, a.action_desc, '-') AS target,
             a.action_icon AS icon,
             CASE
               WHEN TIMESTAMPDIFF(MINUTE, a.action_time, NOW()) < 60
@@ -715,7 +726,7 @@ def get_user_status(user_id):
     return jsonify({"status": "success", "data": {"request_status": req['status']}}), 200
 
 # ---------------------------------------------------------
-# ADMIN — PENDING REQUESTS
+# ADMIN - PENDING REQUESTS
 # Criteria shown: user_role, account_age_days, reason, number_of_requests
 # ---------------------------------------------------------
 
@@ -730,51 +741,52 @@ def user_login():
         return jsonify({"status": "error", "message": "DB Error"}), 500
 
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    cursor.execute("SELECT user_id, password_hash, role FROM users WHERE email = %s", (data['email'],))
-    user = cursor.fetchone()
+    try:
+        # 1. Fetch user by email
+        cursor.execute("SELECT user_id, password_hash, role FROM users WHERE email = %s", (data['email'].lower().strip(),))
+        user = cursor.fetchone()
 
-    if not user:
+        if not user:
+            return jsonify({"status": "error", "message": "No account found with this email"}), 401
+            
+        if user['role'] == 'admin':
+            return jsonify({"status": "error", "message": "Admins must use the administrator portal"}), 403
+
+        # 2. Verify password (matching current system logic of plain-text comparison)
+        if data['password'] != user['password_hash']:
+            return jsonify({"status": "error", "message": "Incorrect password"}), 401
+
+        # 3. Check for initial 'Access' approval status
+        # Only block if their most recent Access-type request is pending or rejected
+        cursor.execute("""
+            SELECT status FROM user_requests 
+            WHERE user_id = %s 
+            AND (request_type LIKE '%%Access%%' OR request_type = 'General Access')
+            ORDER BY created_at DESC LIMIT 1
+        """, (user['user_id'],))
+        access_request = cursor.fetchone()
+
+        if access_request:
+            status = access_request['status']
+            if status == 'pending':
+                return jsonify({"status": "error", "message": "Your access request is currently pending admin approval."}), 403
+            elif status == 'rejected':
+                return jsonify({"status": "error", "message": "Your access request was rejected by an administrator."}), 403
+
+        # 4. Successful login activity logging
+        cursor.execute(
+            "INSERT INTO activity_log (user_id, action, action_desc, action_icon) VALUES (%s, %s, %s, %s)",
+            (user['user_id'], 'logged in', 'User portal', 'right-to-bracket')
+        )
+        conn.commit()
+        return jsonify({"status": "success", "data": {"user_id": user['user_id']}}), 200
+
+    except Exception as e:
+        print(f"Login error: {e}")
+        return jsonify({"status": "error", "message": "An internal server error occurred during login."}), 500
+    finally:
         cursor.close()
         conn.close()
-        return jsonify({"status": "error", "message": "Invalid email or password"}), 401
-
-    if user['role'] == 'admin':
-        cursor.close()
-        conn.close()
-        return jsonify({"status": "error", "message": "Admins must use the administrator portal"}), 403
-
-    if data['password'] != user['password_hash']:
-        cursor.close()
-        conn.close()
-        return jsonify({"status": "error", "message": "Invalid email or password"}), 401
-
-    cursor.execute("""
-        SELECT status FROM user_requests 
-        WHERE user_id = %s 
-        ORDER BY created_at DESC LIMIT 1
-    """, (user['user_id'],))
-    request_rec = cursor.fetchone()
-
-    status = request_rec['status'] if request_rec else 'accepted'
-    if status == 'pending':
-        cursor.close()
-        conn.close()
-        return jsonify({"status": "error", "message": "request not yet approved by admin"}), 403
-    elif status == 'rejected':
-        cursor.close()
-        conn.close()
-        return jsonify({"status": "error", "message": "Your access request was rejected."}), 403
-
-    # Log the successful login
-    cursor.execute(
-        "INSERT INTO activity_log (user_id, action, action_desc, action_icon) VALUES (%s, %s, %s, %s)",
-        (user['user_id'], 'logged in', 'system', 'login')
-    )
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-    return jsonify({"status": "success", "data": {"user_id": user['user_id']}}), 200
 
 
 @app.route('/api/admin/requests', methods=['GET'])
@@ -869,7 +881,7 @@ def manage_user_request(request_id, action):
 
 
 # ---------------------------------------------------------
-# ADMIN — GLOBAL FILE MANAGER  (all files across all users)
+# ADMIN - GLOBAL FILE MANAGER  (all files across all users)
 # ---------------------------------------------------------
 
 @app.route('/api/admin/files', methods=['GET'])
@@ -919,7 +931,7 @@ def admin_get_all_files():
     for f in files:
         f['id'] = str(f['id'])
         raw = f.pop('date_raw', None)
-        f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '—'
+        f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '-'
 
     cursor.close()
     conn.close()
