@@ -249,6 +249,44 @@
             color: white;
         }
 
+        /* About Section */
+        .about-section {
+            padding: 8rem 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .about-image {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 40px;
+            padding: 4rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .about-image i {
+            font-size: 6rem;
+            color: var(--secondary);
+            filter: drop-shadow(0 0 20px var(--secondary-glow));
+        }
+
+        .about-content h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: white;
+            letter-spacing: -1px;
+        }
+
+        .about-content p {
+            color: var(--text-muted);
+            line-height: 1.8;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
         .feature-card p {
             font-size: 1rem;
             color: var(--text-muted);
@@ -334,13 +372,28 @@
                 <p>Experience the next generation of file security. Encrypted, hyper-fast, and designed for the modern web. Your data, your rules.</p>
                 <div style="display: flex; gap: 15px;">
                     <a href="login.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem;">Join CloudHub</a>
-                    <a href="public_files.html" class="btn" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border);">Browse Assets</a>
                 </div>
             </div>
             <div class="hero-img">
                 <div class="illus-main">
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
+            </div>
+        </section>
+
+        <!-- About Us -->
+        <section class="about-section" id="about">
+            <div class="about-image">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div class="about-content">
+                <h2>Our Mission</h2>
+                <p>
+                    CloudHub was born from a simple realization: the internet deserves a truly secure, no-compromise storage solution. We didn't just build another cloud drive; we architected a fortress for your digital identity.
+                </p>
+                <p>
+                    Our platform leverages decentralized storage principles and military-grade encryption to ensure that your data is not just stored, but protected against the threats of tomorrow.
+                </p>
             </div>
         </section>
 
