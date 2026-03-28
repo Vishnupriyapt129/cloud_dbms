@@ -165,7 +165,7 @@ def get_folders():
         target_user = owner_id_param
 
     cursor.execute(
-        "SELECT folder_id AS id, foldername AS name, color, createdat AS created_at FROM folders WHERE created_by = %s",
+        "SELECT folder_id AS id, foldername AS name, color, created_at AS created_at FROM folders WHERE created_by = %s",
         (target_user,)
     )
     folders = cursor.fetchall()

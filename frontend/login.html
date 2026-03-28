@@ -771,7 +771,7 @@
                 const uid = email.includes('vishnupriya') ? 2 : 1;
                 localStorage.setItem('cloudhub_role', 'admin');
                 localStorage.setItem('cloudhub_uid', uid);
-                window.location.href = `index.html?role=admin&uid=${uid}`;
+                window.location.href = `index.html?role=admin&uid=${uid}&t=${Date.now()}`;
             }, 800);
         }
 
@@ -877,7 +877,7 @@
                     showToast('success', 'Login successful! Redirecting to your dashboard...');
                     
                     setTimeout(() => {
-                        window.location.href = 'index.html'; 
+                        window.location.href = `index.html?role=user&uid=${result.data.user_id}&t=${Date.now()}`; 
                     }, 800);
                 } else {
                     showToast('error', result.message || 'Login failed.');
