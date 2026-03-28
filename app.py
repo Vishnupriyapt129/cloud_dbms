@@ -243,7 +243,7 @@ def get_files():
 
     base_sql = (
         "SELECT f.file_id AS id, f.filename AS name, f.filetype AS type, f.filesize AS size, "
-        "f.uploaddate AS date_raw, f.icon, u2.username as owner_name "
+        "f.uploaddate AS date_raw, f.icon, f.is_public, u2.username as owner_name "
         "FROM files f "
         "LEFT JOIN users u2 ON f.owner_id = u2.user_id"
     )
@@ -331,6 +331,34 @@ def search_files():
     conn.close()
     return jsonify({"status": "success", "data": files}), 200
 
+@app.route('/api/files/public', methods=['GET'])
+def get_public_files():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("""
+        SELECT f.file_id AS id, f.filename AS name, f.filetype AS type, 
+        f.filesize AS size, f.uploaddate AS date_raw, f.icon, 
+        u.username as owner_name 
+        FROM files f 
+        LEFT JOIN users u ON f.owner_id = u.user_id 
+        WHERE f.is_public = TRUE 
+        ORDER BY f.uploaddate DESC
+    """)
+    files = cursor.fetchall()
+    
+    for f in files:
+        f['id'] = str(f['id'])
+        raw = f.pop('date_raw', None)
+        f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '-'
+        
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "data": files}), 200
+
+
 
 @app.route('/api/files/upload', methods=['POST'])
 def upload_file():
@@ -345,6 +373,8 @@ def upload_file():
     folder_id = request.form.get('folder_id')
     if not folder_id or folder_id == 'undefined':
         folder_id = 1
+
+    is_public = request.form.get('is_public') == 'true'
 
     file.seek(0, 2)
     size_bytes = file.tell()
@@ -394,9 +424,9 @@ def upload_file():
     cursor.close()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO files (filename, filetype, filesize, icon, folder_id, owner_id, file_data) "
-        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-        (file.filename, type_str, size_str, icon_str, folder_id, user_id, file_bytes)
+        "INSERT INTO files (filename, filetype, filesize, icon, folder_id, owner_id, file_data, is_public) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+        (file.filename, type_str, size_str, icon_str, folder_id, user_id, file_bytes, is_public)
     )
     new_file_id = cursor.lastrowid
 
@@ -440,7 +470,7 @@ def download_file(file_id):
     u = cursor.fetchone()
     is_admin = u and u['role'] == 'admin'
 
-    cursor.execute("SELECT filename, owner_id, file_data FROM files WHERE file_id = %s", (file_id,))
+    cursor.execute("SELECT filename, owner_id, file_data, is_public FROM files WHERE file_id = %s", (file_id,))
     f = cursor.fetchone()
     
     if not f:
@@ -454,7 +484,7 @@ def download_file(file_id):
     cursor.close()
     conn.close()
 
-    if not is_admin and f['owner_id'] != user_id and not has_access:
+    if not is_admin and f['owner_id'] != user_id and not has_access and not f.get('is_public'):
         return jsonify({"status": "error", "message": "Unauthorized"}), 403
 
     orig_filename = f['filename']
@@ -588,6 +618,48 @@ def delete_file(file_id):
     cursor.close()
     conn.close()
     return jsonify({"status": "success", "message": "File deleted."}), 200
+
+@app.route('/api/files/<int:file_id>/public', methods=['POST'])
+def toggle_file_public(file_id):
+    user_id = int(request.headers.get('Authorization', 1) or 1)
+    data = request.json
+    if not data or 'is_public' not in data:
+        return jsonify({"status": "error", "message": "Missing is_public"}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT owner_id FROM files WHERE file_id = %s", (file_id,))
+    f = cursor.fetchone()
+    
+    if not f:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "File not found"}), 404
+        
+    cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    is_admin = u and u['role'] == 'admin'
+
+    if not is_admin and f['owner_id'] != user_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    cursor.execute("UPDATE files SET is_public = %s WHERE file_id = %s", (data['is_public'], file_id))
+    
+    status_str = 'public' if data['is_public'] else 'private'
+    cursor.execute(
+        "INSERT INTO activity_log (user_id, action, file_id, action_desc, action_icon) VALUES (%s, %s, %s, %s, %s)",
+        (user_id, f'made file {status_str}', file_id, 'file', 'globe')
+    )
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "message": f"File is now {status_str}"}), 200
 
 # ---------------------------------------------------------
 # ACCESS CONTROL  (uses: access_control - access_id, user_id, file_id, permission)

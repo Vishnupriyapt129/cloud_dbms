@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudHub | Public Files</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .public-container {
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .home-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        .public-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .file-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .file-card:hover {
+            border-color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px var(--secondary-glow);
+        }
+
+        .file-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .file-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .view-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: 600;
+            transition: background 0.3s;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .view-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+             font-size: 4rem;
+             margin-bottom: 20px;
+             color: var(--border);
+        }
+    </style>
+</head>
+<body>
+    <div class="public-container">
+        <div class="header-actions">
+            <a href="home.html" class="home-btn"><i class="fa-solid fa-arrow-left"></i> Go Back to Home</a>
+        </div>
+        
+        <h1><i class="fa-solid fa-globe" style="color: var(--primary);"></i> Public Community Files</h1>
+        <p class="subtitle">Explore and download files shared publicly by our users.</p>
+
+        <div class="public-grid" id="public-files-grid">
+            <div class="empty-state">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <h3 style="color: white; margin-top: 15px;">Loading Public Files...</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (window.location.protocol === 'file:' || window.location.origin === 'null') ? 'http://localhost:5000/api' : window.location.origin + '/api';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const grid = document.getElementById('public-files-grid');
+            
+            try {
+                const response = await fetch(`${API_BASE}/files/public`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    if (data.data.length === 0) {
+                        grid.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fa-solid fa-folder-open"></i>
+                                <h3 style="color: white;">No Public Files Yet</h3>
+                                <p>Users haven't shared anything publicly at this time.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    grid.innerHTML = '';
+                    data.data.forEach(f => {
+                        const iconHtml = getIconHtml(f.icon);
+                        const card = document.createElement('div');
+                        card.className = 'file-card';
+                        card.innerHTML = `
+                            <div class="file-icon">${iconHtml}</div>
+                            <div class="file-name">${f.name}</div>
+                            <div class="file-meta">
+                                <span><i class="fa-solid fa-user"></i> ${f.owner_name}</span>
+                                <span>${f.size}</span>
+                            </div>
+                            <div class="file-meta" style="margin-top: 0;">
+                                <span style="font-size: 0.8rem;">Uploaded: ${f.date_modified}</span>
+                            </div>
+                            <a href="${API_BASE}/files/download/${f.id}?uid=1" target="_blank" class="view-btn">
+                                <i class="fa-solid fa-download"></i> View / Download
+                            </a>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            } catch (err) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #e74c3c;"></i>
+                        <h3 style="color: white;">Error Loading Files</h3>
+                        <p>Could not connect to the server.</p>
+                    </div>
+                `;
+            }
+        });
+
+        function getIconHtml(iconType) {
+            const icons = {
+                'pdf': '<i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i>',
+                'excel': '<i class="fa-solid fa-file-excel" style="color:#2ecc71;"></i>',
+                'powerpoint': '<i class="fa-solid fa-file-powerpoint" style="color:#e67e22;"></i>',
+                'image': '<i class="fa-solid fa-file-image" style="color:#3498db;"></i>',
+                'text': '<i class="fa-solid fa-file-lines" style="color:#bdc3c7;"></i>',
+                'music': '<i class="fa-solid fa-file-audio" style="color:#9b59b6;"></i>',
+                'video': '<i class="fa-solid fa-file-video" style="color:#e84393;"></i>'
+            };
+            return icons[iconType] || '<i class="fa-solid fa-file" style="color:#95a5a6;"></i>';
+        }
+    </script>
+</body>
+</html>

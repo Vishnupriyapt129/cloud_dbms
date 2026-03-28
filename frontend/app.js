@@ -611,16 +611,21 @@ async function fetchFiles(folderId = currentFolderId, filterType = null) {
                 <td>${file.date_modified || '-'}</td>
                 <td>
                     <div class="file-actions">
+                        <button class="action-btn" style="color:${file.is_public ? '#f39c12' : '#95a5a6'};" 
+                            title="${file.is_public ? 'Make Private' : 'Make Public'}"
+                            onclick="event.stopPropagation(); togglePublicStatus('${file.id}', ${!file.is_public})">
+                            <i class="fa-solid ${file.is_public ? 'fa-globe' : 'fa-lock'}"></i>
+                        </button>
                         <button class="action-btn" style="color:#27ae60;" title="View"
-                            onclick="handleViewAppFile('${file.id}')">
+                            onclick="event.stopPropagation(); handleViewAppFile('${file.id}')">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                         <button class="action-btn" style="color:#3498db;" title="Download"
-                            onclick="handleDownloadFile('${file.id}')">
+                            onclick="event.stopPropagation(); handleDownloadFile('${file.id}')">
                             <i class="fa-solid fa-download"></i>
                         </button>
                         <button class="action-btn" style="color:#e74c3c;" title="Delete"
-                            onclick="handleDeleteFile('${file.id}')">
+                            onclick="event.stopPropagation(); handleDeleteFile('${file.id}')">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
@@ -1544,3 +1549,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+async function togglePublicStatus(fileId, isPublic) {
+    try {
+        showToast('info', isPublic ? 'Publishing file to community...' : 'Securing file privately...');
+        const res = await authFetch(`${API_BASE}/files/${fileId}/public`, {
+            method: 'POST',
+            body: JSON.stringify({ is_public: isPublic }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            fetchFiles(); 
+            fetchActivityLogs();
+            showToast('success', result.message);
+        } else {
+            showToast('error', result.message);
+        }
+    } catch(err) {
+        showToast('error', 'Network error making status update');
+    }
+}

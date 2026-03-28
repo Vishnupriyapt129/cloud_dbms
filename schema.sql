@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS files (
     folder_id    INT,
     owner_id     INT NOT NULL,
     file_data    LONGBLOB     DEFAULT NULL,
+    is_public    BOOLEAN      DEFAULT FALSE,
     uploaddate   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (folder_id) REFERENCES folders(folder_id) ON DELETE SET NULL,
     FOREIGN KEY (owner_id)  REFERENCES users(user_id)    ON DELETE CASCADE
