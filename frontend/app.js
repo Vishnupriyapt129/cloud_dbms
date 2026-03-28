@@ -80,6 +80,17 @@ function changeView(view) {
     const banner = document.querySelector('.banner-section');
     const role = localStorage.getItem('cloudhub_role');
 
+    // Layout adjustment for User Directory logic
+    const coreGrid = document.querySelector('.core-grid');
+    const activityPanel = document.querySelector('.activity-panel');
+    if (view === 'users') {
+        if (coreGrid) coreGrid.style.gridTemplateColumns = '1fr';
+        if (activityPanel) activityPanel.style.display = 'none';
+    } else {
+        if (coreGrid) coreGrid.style.gridTemplateColumns = '';
+        if (activityPanel) activityPanel.style.display = 'flex';
+    }
+
     // 2. Logic for each view
     const isAdminView = ['home', 'requests', 'users'].includes(view) && role === 'admin';
     if (banner) {
@@ -810,15 +821,30 @@ async function fetchAdminUsersList() {
         if (result.status !== 'success') return;
 
         grid.innerHTML = '';
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        grid.style.gap = '15px';
+
         result.data.forEach(user => {
             const card = document.createElement('div');
-            card.className = 'folder-card';
-            card.style.cssText = 'padding:24px; border-radius:16px; border:1px solid var(--border); transition:0.3s;';
+            card.className = 'user-directory-card';
+            
+            // Generate a random avatar colour based on name length for visual variety
+            const colors = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#f43f5e'];
+            const avatarColor = colors[user.name.length % colors.length];
+            const initial = user.name.charAt(0).toUpperCase();
+
             card.innerHTML = `
-                <div style="font-size:2.4rem; color:var(--primary); margin-bottom:12px; opacity:0.8;"><i class="fa-solid fa-user-gear"></i></div>
-                <div style="font-weight:700; font-size:1rem; color:white; margin-bottom:4px;">${user.name}</div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">${user.file_count} Cloud Assets</div>
-                <button class="btn btn-sm btn-accent" style="width:100%; margin-top:15px; font-size:0.7rem;">Explore Vault</button>
+                <div class="user-avatar" style="background: ${avatarColor};">
+                    ${initial}
+                </div>
+                <div class="user-info">
+                    <h4>${user.name}</h4>
+                    <span class="user-meta">${user.file_count} Cloud Assets</span>
+                </div>
+                <button class="btn-explore" title="Audit User">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
             `;
             card.onclick = () => exploreAdminUser(user.id, user.name, user.file_count);
             grid.appendChild(card);
@@ -1067,31 +1093,215 @@ function handleEditUser(userId, currentRole) {
     });
 }
 
+// ── LIVE SEARCH ──────────────────────────────────────────────────────────────
+let _searchTimer = null;
+let _searchResults = [];      // cache last results for keyboard navigation
+let _searchHighlight = -1;    // index of currently highlighted dropdown item
+
 function handleSearch(event) {
-    const query = event.target.value.toLowerCase();
-    const rows = document.querySelectorAll('#file-list tr');
-    
-    rows.forEach(row => {
-        // Skip any completely empty or loading rows
-        if (row.cells && row.cells.length <= 1) return;
-        
-        const fileNameCell = row.querySelector('.file-name-cell span');
-        if (fileNameCell) {
-            const text = fileNameCell.textContent.toLowerCase();
-            // Show or hide based on match
-            if (text.includes(query)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+    const query = event.target.value.trim();
+    clearTimeout(_searchTimer);
+
+    if (!query) {
+        closeSearchDropdown();
+        document.querySelectorAll('#file-list tr').forEach(r => r.style.display = '');
+        _searchResults = [];
+        _searchHighlight = -1;
+        return;
+    }
+
+    // Debounce: wait 280ms after last keystroke
+    _searchTimer = setTimeout(() => runSearch(query), 280);
+}
+
+
+// Called via onkeydown="handleSearchKey(event)" on the search input
+function handleSearchKey(e) {
+    const items = document.querySelectorAll('#search-dropdown .search-item');
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        closeSearchDropdown();
+        e.target.value = '';
+        _searchResults = [];
+        _searchHighlight = -1;
+        document.querySelectorAll('#file-list tr').forEach(r => r.style.display = '');
+        return;
+    }
+
+    if (!items.length) return; // no dropdown open — nothing to navigate
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        _searchHighlight = Math.min(_searchHighlight + 1, items.length - 1);
+        updateSearchHighlight(items);
+
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        _searchHighlight = Math.max(_searchHighlight - 1, 0);
+        updateSearchHighlight(items);
+
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        // Use the highlighted item, or fall back to the first result
+        const idx = _searchHighlight >= 0 ? _searchHighlight : 0;
+        if (_searchResults[idx]) {
+            navigateToSearchResult(_searchResults[idx]);
+        }
+    }
+}
+
+
+function updateSearchHighlight(items) {
+    items.forEach((el, i) => {
+        if (i === _searchHighlight) {
+            el.style.background = 'rgba(139,92,246,0.2)';
+            el.style.borderLeft = '3px solid var(--primary)';
+            el.scrollIntoView({ block: 'nearest' });
+        } else {
+            el.style.background = '';
+            el.style.borderLeft = '3px solid transparent';
         }
     });
 }
 
-function handleLogout() {
+/** Shared: open the folder that contains this search result file */
+function navigateToSearchResult(file) {
+    closeSearchDropdown();
+    document.getElementById('search-input').value = '';
+    _searchResults = [];
+    _searchHighlight = -1;
+
+    if (!file.folder_id) return;
+
+    // Set globals so the changeView router knows which folder is "open"
+    currentFolderId = file.folder_id;
+    currentFolderName = file.folder_name || 'Folder';
+    currentFolderColor = '#ffa502'; // default color if unknown
+
+    // Trigger full navigation transition to the Folders tab
+    changeView('folders');
+}
+
+async function runSearch(query) {
+    try {
+        const res = await authFetch(`${API_BASE}/files/search?q=${encodeURIComponent(query)}`);
+        const result = await res.json();
+        _searchResults = result.data || [];
+        _searchHighlight = -1;
+        showSearchDropdown(_searchResults, query);
+    } catch(e) {
+        console.error('Search error:', e);
+    }
+}
+
+function showSearchDropdown(files, query) {
+    closeSearchDropdown();
+
+    const searchBox = document.querySelector('.search-box');
+    if (!searchBox) return;
+
+    const dropdown = document.createElement('div');
+    dropdown.id = 'search-dropdown';
+    dropdown.style.cssText = `
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0; right: 0;
+        background: var(--surface-2, #1e2438);
+        border: 1px solid var(--border, #2e3650);
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+        z-index: 9999;
+        overflow: hidden;
+        max-height: 380px;
+        overflow-y: auto;
+    `;
+
+    if (files.length === 0) {
+        dropdown.innerHTML = `
+            <div style="padding:24px; text-align:center; color:var(--text-muted);">
+                <i class="fa-solid fa-magnifying-glass" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:8px;"></i>
+                No files found matching "<strong style="color:var(--primary)">${query}</strong>"
+            </div>`;
+    } else {
+        const header = document.createElement('div');
+        header.style.cssText = 'padding:10px 16px 6px; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:600;';
+        header.textContent = `${files.length} result${files.length !== 1 ? 's' : ''} — ↑↓ to navigate, Enter to open`;
+        dropdown.appendChild(header);
+
+        files.forEach((file, idx) => {
+            const classes = getFileIconClass(file.type || '').split(' ');
+            const bgClass = classes[0] || 'bg-default';
+            const iClass  = classes[1] || 'fa-file';
+            const folderLabel = file.folder_name ? `in ${file.folder_name}` : '';
+
+            const item = document.createElement('div');
+            item.className = 'search-item';
+            item.style.cssText = `
+                display:flex; align-items:center; gap:12px;
+                padding:10px 16px; cursor:pointer;
+                transition: background 0.15s;
+                border-top: 1px solid rgba(255,255,255,0.04);
+                border-left: 3px solid transparent;
+            `;
+            item.onmouseenter = () => {
+                _searchHighlight = idx;
+                updateSearchHighlight(document.querySelectorAll('#search-dropdown .search-item'));
+            };
+            item.innerHTML = `
+                <div class="file-icon ${bgClass}" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fa-solid ${iClass}" style="font-size:0.85rem;"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${file.name}</div>
+                    <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">
+                        ${file.type} · ${file.size} · ${file.date_modified}
+                        ${folderLabel ? `<span style="color:var(--primary);margin-left:4px;"><i class="fa-solid fa-folder" style="font-size:0.65rem;"></i> ${folderLabel}</span>` : ''}
+                    </div>
+                </div>
+                <i class="fa-solid fa-arrow-right" style="color:var(--primary);opacity:0.5;font-size:0.7rem;"></i>
+            `;
+            item.addEventListener('click', () => navigateToSearchResult(file));
+            dropdown.appendChild(item);
+        });
+    }
+
+    searchBox.style.position = 'relative';
+    searchBox.appendChild(dropdown);
+
+    setTimeout(() => {
+        document.addEventListener('click', _closeSearchOnOutsideClick);
+    }, 10);
+}
+
+function _closeSearchOnOutsideClick(e) {
+    const dd = document.getElementById('search-dropdown');
+    const sb = document.querySelector('.search-box');
+    if (dd && sb && !sb.contains(e.target)) {
+        closeSearchDropdown();
+        document.getElementById('search-input').value = '';
+        document.querySelectorAll('#file-list tr').forEach(r => r.style.display = '');
+        _searchResults = [];
+        _searchHighlight = -1;
+    }
+}
+
+function closeSearchDropdown() {
+    const dd = document.getElementById('search-dropdown');
+    if (dd) dd.remove();
+    document.removeEventListener('click', _closeSearchOnOutsideClick);
+}
+
+function triggerLogout() {
     localStorage.removeItem('cloudhub_role');
+    localStorage.removeItem('cloudhub_uid');
     window.location.href = 'login.html';
 }
+
+function handleLogout() {
+    triggerLogout();
+}
+
 
 // Custom UI Modal Engine
 function showModal({ title, desc, showInput = false, defaultValue = '', onConfirm }) {

@@ -105,7 +105,15 @@ def get_user_profile():
     # If Admin, fetch GLOBAL stats (System-wide 20 GB limit)
     user_count = None
     if user['role'] == 'admin':
-        cursor.execute("SELECT COUNT(*) as total_users FROM users WHERE role = 'user'")
+        cursor.execute("""
+            SELECT COUNT(*) as total_users FROM users 
+            WHERE role = 'user' 
+            AND (
+                user_id NOT IN (SELECT user_id FROM user_requests)
+                OR 
+                user_id IN (SELECT user_id FROM user_requests WHERE status = 'accepted')
+            )
+        """)
         uc = cursor.fetchone()
         user_count = uc['total_users'] if uc else 0
 
@@ -269,6 +277,54 @@ def get_files():
     files = cursor.fetchall()
     for f in files:
         f['id'] = str(f['id'])
+        raw = f.pop('date_raw', None)
+        f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '-'
+    cursor.close()
+    conn.close()
+    return jsonify({"status": "success", "data": files}), 200
+
+
+@app.route('/api/files/search', methods=['GET'])
+def search_files():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    user_id = int(auth_header)
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({"status": "success", "data": []}), 200
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"status": "error", "message": "DB Error"}), 500
+
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    is_admin = u and u['role'] == 'admin'
+
+    like_query = f"%{query}%"
+    if is_admin:
+        cursor.execute(
+            "SELECT f.file_id AS id, f.filename AS name, f.filetype AS type, f.filesize AS size, "
+            "f.uploaddate AS date_raw, f.folder_id, fo.foldername AS folder_name "
+            "FROM files f LEFT JOIN folders fo ON f.folder_id = fo.folder_id "
+            "WHERE f.filename LIKE %s AND f.folder_id IS NOT NULL ORDER BY f.uploaddate DESC LIMIT 20",
+            (like_query,)
+        )
+    else:
+        cursor.execute(
+            "SELECT f.file_id AS id, f.filename AS name, f.filetype AS type, f.filesize AS size, "
+            "f.uploaddate AS date_raw, f.folder_id, fo.foldername AS folder_name "
+            "FROM files f LEFT JOIN folders fo ON f.folder_id = fo.folder_id "
+            "WHERE f.owner_id = %s AND f.filename LIKE %s AND f.folder_id IS NOT NULL ORDER BY f.uploaddate DESC LIMIT 20",
+            (user_id, like_query)
+        )
+
+    files = cursor.fetchall()
+    for f in files:
+        f['id'] = str(f['id'])
+        f['folder_id'] = str(f['folder_id']) if f['folder_id'] else None
         raw = f.pop('date_raw', None)
         f['date_modified'] = raw.strftime('%b %d, %Y') if raw else '-'
     cursor.close()
@@ -1092,11 +1148,18 @@ def admin_list_users():
         conn.close()
         return jsonify({"status": "error", "message": "Unauthorized"}), 403
 
-    cursor.execute(
-        "SELECT user_id AS id, username AS name, "
-        "(SELECT COUNT(*) FROM files WHERE owner_id = users.user_id) AS file_count "
-        "FROM users WHERE role = 'user' ORDER BY username ASC"
-    )
+    cursor.execute("""
+        SELECT user_id AS id, username AS name, 
+        (SELECT COUNT(*) FROM files WHERE owner_id = users.user_id) AS file_count 
+        FROM users 
+        WHERE role = 'user' 
+        AND (
+            user_id NOT IN (SELECT user_id FROM user_requests)
+            OR 
+            user_id IN (SELECT user_id FROM user_requests WHERE status = 'accepted')
+        )
+        ORDER BY username ASC
+    """)
     users = cursor.fetchall()
     for u in users:
         u['id'] = str(u['id'])

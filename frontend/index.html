@@ -27,7 +27,7 @@
                 <li id="nav-users" class="admin-only" style="display:none;"><a href="#" onclick="changeView('users')"><i class="fa-solid fa-users-gear"></i> <span>User Directory</span></a></li>
                 
                 <li id="nav-recent"><a href="#" onclick="changeView('recent')"><i class="fa-solid fa-clock-rotate-left"></i> <span>Recent</span></a></li>
-                <li id="nav-trash" class="user-only"><a href="#" onclick="changeView('trash')"><i class="fa-solid fa-trash-can"></i> <span>Trash</span></a></li>
+
             </ul>
 
             <!-- ACTIVITY HISTORY SIDEBAR -->
@@ -61,7 +61,7 @@
             <header class="portal-header">
                 <div class="search-box">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="search-input" placeholder="Search files, folders or users..." oninput="handleSearch(event)">
+                    <input type="text" id="search-input" placeholder="Search files, folders or users..." oninput="handleSearch(event)" onkeydown="handleSearchKey(event)">
                 </div>
                 
                 <div class="header-actions">

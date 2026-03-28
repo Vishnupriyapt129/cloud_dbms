@@ -301,6 +301,82 @@ body {
 .u-name { font-size: 0.9rem; font-weight: 600; }
 .u-role { font-size: 0.7rem; color: var(--text-muted); }
 
+/* PROFILE DROPDOWN MENU */
+.profile-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 250px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    padding: 15px 0 5px 0;
+    display: none; /* hidden by default */
+    flex-direction: column;
+    z-index: 9999;
+}
+
+.profile-dropdown-menu.active {
+    display: flex;
+    animation: slideDown 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-header {
+    padding: 0 20px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.dropdown-header strong {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.dropdown-header small {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+}
+
+.dropdown-item {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.dropdown-item i {
+    font-size: 1rem;
+    color: var(--text-muted);
+    transition: var(--transition);
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--accent); /* red hover for logout */
+}
+
+.dropdown-item:hover i {
+    color: var(--accent);
+}
+
 /* PORTAL BODY */
 .portal-body {
     flex-grow: 1;
@@ -756,6 +832,7 @@ body {
     margin-bottom: 8px;
     background: linear-gradient(to right, #fff, var(--primary));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     position: relative;
     z-index: 1;
@@ -770,14 +847,74 @@ body {
 }
 
 /* ADMIN USER DIRECTORY */
-#admin-user-grid .folder-card {
+.user-directory-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 15px;
     cursor: pointer;
-    text-align: center;
+    transition: var(--transition);
 }
 
-#admin-user-grid .folder-card:hover {
-    background: var(--bg-hover);
+.user-directory-card:hover {
     border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+.user-directory-card .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.user-directory-card .user-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.user-directory-card h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-directory-card .user-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.btn-explore {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.user-directory-card:hover .btn-explore {
+    background: var(--primary);
+    color: white;
 }
 
 .mini-file-item {
