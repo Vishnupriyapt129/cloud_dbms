@@ -10,8 +10,11 @@ async function authFetch(url, options = {}) {
     return fetch(url, { ...options, headers });
 }
 
-let currentFolderId = '1';
+let currentFolderId = null;    // ID of the folder currently open (null = folder grid)
+let currentFolderName = null;  // Display name of the open folder
+let currentFolderColor = '#ffa502'; // Colour of the open folder icon
 let currentFileId = '1';
+let viewGeneration = 0; // Incremented on every view change to cancel stale async renders
 
 document.addEventListener('DOMContentLoaded', () => {
     const role = localStorage.getItem('cloudhub_role');
@@ -37,13 +40,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const badge = document.getElementById('requests-badge-nav');
             if (badge && parseInt(badge.textContent) > 0) {
                 changeView('requests');
+            } else {
+                changeView('home');
             }
         });
+    } else {
+        // Standard user always starts on home
+        changeView('home');
     }
 
-    fetchUserData();
+    fetchUserData(); // Vital for populating top avatar/navbar for both roles
     checkApprovalStatus();
-    fetchFolders();
     fetchAccessControl();
     fetchActivityLogs();
     
@@ -54,13 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function changeView(view) {
+    viewGeneration++; // Invalidate any in-flight async renders from the previous view
+    const gen = viewGeneration;
     // 1. Update active sidebar item
     document.querySelectorAll('.side-nav li').forEach(li => li.classList.remove('active'));
     const activeLi = document.getElementById(`nav-${view}`);
     if (activeLi) activeLi.classList.add('active');
 
     // Hide all main containers
-    const containers = ['folder-grid', 'file-panel', 'admin-requests-view', 'admin-users-view', 'admin-home-view', 'folder-breadcrumb'];
+    const containers = ['folder-grid', 'file-panel', 'admin-requests-view', 'admin-users-view', 'admin-home-view', 'user-home-view', 'folder-breadcrumb'];
     containers.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -84,18 +93,38 @@ function changeView(view) {
             if (actionArea) actionArea.style.display = 'none';
             document.getElementById('admin-home-view').style.display = 'block';
         } else {
-            closeFolder();
-            welcome.textContent = 'Vault Access';
-            if (actionArea) actionArea.style.display = 'flex';
-            document.getElementById('folder-grid').style.display = 'grid';
-            fetchFolders(true);
+            welcome.textContent = 'My Dashboard';
+            if (actionArea) actionArea.style.display = 'none';
+            // NOTE: do NOT clear currentFolderId here — preserve folder state across tabs
+            const userHome = document.getElementById('user-home-view');
+            if (userHome) userHome.style.display = 'block';
+            fetchUserData();
         }
     } else if (view === 'folders') {
-        closeFolder();
-        welcome.textContent = 'Cloud Folders';
         if (actionArea) actionArea.style.display = 'flex';
-        document.getElementById('folder-grid').style.display = 'grid';
-        fetchFolders(true);
+
+        if (currentFolderId) {
+            // A folder is already open — restore the file panel immediately
+            welcome.textContent = 'Cloud Folders';
+            document.getElementById('folder-grid').style.display = 'none';
+            document.getElementById('file-panel').style.display = 'block';
+            const bc = document.getElementById('folder-breadcrumb');
+            bc.style.display = 'flex';
+            const nameEl = document.getElementById('open-folder-name');
+            if (nameEl && currentFolderName) nameEl.textContent = currentFolderName;
+            const folderIcon = document.querySelector('#folder-breadcrumb .fa-folder');
+            if (folderIcon) folderIcon.style.color = currentFolderColor;
+            fetchFiles(currentFolderId, null);
+        } else {
+            // No folder open — show folder grid
+            welcome.textContent = 'Cloud Folders';
+            const uploadArea = document.getElementById('upload-area');
+            if (uploadArea) uploadArea.style.display = 'none';
+            document.getElementById('folder-grid').style.display = 'grid';
+            document.getElementById('file-panel').style.display = 'none';
+            document.getElementById('folder-breadcrumb').style.display = 'none';
+            fetchFolders(true, gen);
+        }
     } else if (view === 'requests') {
         welcome.textContent = 'Admin: User Requests';
         if (actionArea) actionArea.style.display = 'none';
@@ -107,11 +136,12 @@ function changeView(view) {
         document.getElementById('admin-users-view').style.display = 'block';
         showAdminUserGrid();
     } else if (view === 'recent') {
-        document.getElementById('file-panel').style.display = 'none';
         welcome.textContent = 'Recent Activity (Last 24h)';
         if (actionArea) actionArea.style.display = 'none';
+        // NOTE: do NOT set file-panel display:none here — stay consistent, just hide file-panel
+        document.getElementById('file-panel').style.display = 'none';
         document.getElementById('folder-grid').style.display = 'grid';
-        fetchRecentOnlyGrid();
+        fetchRecentOnlyGrid(gen);
     } else {
         if (actionArea) actionArea.style.display = 'none';
         const grid = document.getElementById('folder-grid');
@@ -132,20 +162,18 @@ async function fetchRecentFilesForHome() {
     try {
         const res = await authFetch(`${API_BASE}/files?limit=6`);
         const result = await res.json();
-        const grid = document.getElementById('folder-grid');
+        const container = document.getElementById('user-recent-files');
+        if (!container) return;
         
         if (result.status === 'success' && result.data.length > 0) {
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'grid-column: 1 / -1; margin-bottom: 30px;';
-            wrapper.innerHTML = `
+            container.innerHTML = `
                 <div style="font-weight:700; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:15px; display:flex; align-items:center; gap:8px;">
                     <i class="fa-solid fa-clock-rotate-left" style="color:var(--primary)"></i> Recently Active
                 </div>
                 <div id="recent-files-strip" style="display:flex; gap:15px; overflow-x:auto; padding-bottom:10px;"></div>
             `;
-            grid.appendChild(wrapper);
 
-            const strip = wrapper.querySelector('#recent-files-strip');
+            const strip = container.querySelector('#recent-files-strip');
             result.data.forEach(file => {
                 const card = document.createElement('div');
                 card.className = 'recent-file-card';
@@ -157,22 +185,17 @@ async function fetchRecentFilesForHome() {
                 `;
                 strip.appendChild(card);
             });
-
-            // Add "All Folders" section title
-            const folderHeading = document.createElement('div');
-            folderHeading.style.cssText = 'grid-column: 1 / -1; font-weight:700; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; margin: 10px 0 15px;';
-            folderHeading.innerHTML = '<i class="fa-solid fa-folder-tree"></i> Root Directories';
-            grid.appendChild(folderHeading);
         }
     } catch(e) { console.error("Home Recent Fetch Error:", e); }
 }
 
-async function fetchRecentOnlyGrid() {
+async function fetchRecentOnlyGrid(gen = viewGeneration) {
     try {
         const res = await authFetch(`${API_BASE}/files?filter=recent`);
         const result = await res.json();
+        if (gen !== viewGeneration) return; // View changed while we were fetching — discard
         const grid = document.getElementById('folder-grid');
-        grid.innerHTML = ''; 
+        grid.innerHTML = '';
 
         if (result.status === 'success') {
             const files = result.data;
@@ -359,6 +382,16 @@ async function fetchUserData() {
                 if (totalLimit) totalLimit.textContent = `${totalGB} GB`;
                 if (totalUsed) totalUsed.textContent = usedStr;
                 if (usedPerc) usedPerc.textContent = `${Number(user.storage.percentage).toFixed(1)}% Utilization`;
+            } else {
+                const totalFolders = document.getElementById('user-total-folders');
+                const totalFiles = document.getElementById('user-total-files');
+                const totalUsed = document.getElementById('user-total-used');
+                const usedPerc = document.getElementById('user-used-percent');
+                
+                if (totalFolders) totalFolders.textContent = user.folder_count || 0;
+                if (totalFiles) totalFiles.textContent = user.file_count || 0;
+                if (totalUsed) totalUsed.textContent = usedStr;
+                if (usedPerc) usedPerc.textContent = `${Number(user.storage.percentage).toFixed(1)}% of 1 GB Quota`;
             }
 
             // Set progress bar with small delay for animation
@@ -390,10 +423,11 @@ async function checkApprovalStatus() {
     } catch(e) {}
 }
 
-async function fetchFolders(clear = true) {
+async function fetchFolders(clear = true, gen = viewGeneration) {
     try {
         const res = await authFetch(`${API_BASE}/folders?t=${Date.now()}`);
         const result = await res.json();
+        if (gen !== viewGeneration) return; // View changed while fetching — discard stale result
 
         if (result.status === 'success') {
             const folders = result.data;
@@ -449,6 +483,8 @@ async function fetchFolders(clear = true) {
 
 function openFolder(folderId, folderName, folderColor = '#ffa502') {
     currentFolderId = folderId;
+    currentFolderName = folderName;   // persist for tab-switching restore
+    currentFolderColor = folderColor; // persist for breadcrumb colour restore
 
     // Switch views
     document.getElementById('folder-grid').style.display = 'none';
@@ -458,10 +494,8 @@ function openFolder(folderId, folderName, folderColor = '#ffa502') {
     const bc = document.getElementById('folder-breadcrumb');
     bc.style.display = 'flex';
     document.getElementById('open-folder-name').textContent = folderName;
-    document.querySelector('#folder-breadcrumb .fa-folder').style.color = folderColor;
-
-    // Update header title
-    // Removed browser-title
+    const folderIconEl = document.querySelector('#folder-breadcrumb .fa-folder');
+    if (folderIconEl) folderIconEl.style.color = folderColor;
 
     // Show upload button
     const uploadArea = document.getElementById('upload-area');
@@ -471,93 +505,132 @@ function openFolder(folderId, folderName, folderColor = '#ffa502') {
 }
 
 function closeFolder() {
-    // Switch back to grid
-    document.getElementById('folder-grid').style.display = '';
+    // Hide file panel and breadcrumb, show folder grid
+    document.getElementById('folder-grid').style.display = 'grid';
     document.getElementById('file-panel').style.display = 'none';
     document.getElementById('folder-breadcrumb').style.display = 'none';
-    // Removed browser-title
 
-    // Hide upload button
+    // Hide upload area
     const uploadArea = document.getElementById('upload-area');
     if (uploadArea) uploadArea.style.display = 'none';
 
-    // Clear file list
+    // Clear file list and reset ALL folder state
     const tbody = document.getElementById('file-list');
     if (tbody) tbody.innerHTML = '';
     currentFolderId = null;
+    currentFolderName = null;
+    currentFolderColor = '#ffa502';
 }
 
 async function fetchFiles(folderId = currentFolderId, filterType = null) {
     currentFolderId = folderId;
-    const tbody = document.getElementById('file-list');
-    const emptyState = document.getElementById('file-empty-state');
-    if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
-        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
-    </td></tr>`;
+    // Step 1: find tbody
+    const tbody = document.getElementById('file-list');
+    if (!tbody) {
+        console.error('[fetchFiles] CRITICAL: #file-list tbody not found in DOM!');
+        return;
+    }
+
+    // Step 2: find/hide empty state
+    const emptyState = document.getElementById('file-empty-state');
     if (emptyState) emptyState.style.display = 'none';
 
+    // Step 3: ensure file-panel is visible
+    const filePanel = document.getElementById('file-panel');
+    if (filePanel) filePanel.style.display = 'block';
+
+    // Step 4: show loading
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading files...
+    </td></tr>`;
+
     try {
+        // Step 5: build URL
         let url = `${API_BASE}/files?t=${Date.now()}`;
-        if (folderId && folderId !== 'null' && folderId !== null) url += `&folder_id=${folderId}`;
+        if (folderId && folderId !== 'null' && folderId !== null) {
+            url += `&folder_id=${folderId}`;
+        }
         if (filterType) url += `&filter=${filterType}`;
 
+        // Step 6: fetch
         const res = await authFetch(url);
+        if (!res.ok) {
+            tbody.innerHTML = `<tr><td colspan="5" style="color:#e74c3c;padding:20px;">Server error ${res.status}</td></tr>`;
+            return;
+        }
+
         const result = await res.json();
 
-        if (result.status === 'success') {
-            const files = result.data;
-            tbody.innerHTML = '';
+        // Step 7: clear and check
+        tbody.innerHTML = '';
 
-            if (files.length === 0) {
-                if (emptyState) emptyState.style.display = 'block';
-                return;
-            }
-
-            files.forEach(file => {
-                const tr = document.createElement('tr');
-                tr.style.cursor = 'pointer';
-                tr.onclick = (e) => {
-                    if (e.target.closest('.action-btn')) return;
-                    currentFileId = file.id;
-                    fetchAccessControl(file.id);
-                };
-                const classes = getFileIconClass(file.type).split(' ');
-                const bgClass = classes[0];
-                const iClass = classes[1];
-
-                tr.innerHTML = `
-                    <td>
-                        <div class="file-name-cell">
-                            <div class="file-icon ${bgClass}">
-                                <i class="fa-solid ${iClass}"></i>
-                            </div>
-                            <span>${file.name}</span>
-                        </div>
-                    </td>
-                    <td>${file.type}</td>
-                    <td>${file.size}</td>
-                    <td>${file.date_modified}</td>
-                    <td>
-                        <div class="file-actions">
-                            <button class="action-btn" style="color:#3498db;" title="Download"
-                                onclick="handleDownloadFile('${file.id}')">
-                                <i class="fa-solid fa-download"></i>
-                            </button>
-                            <button class="action-btn" style="color:#e74c3c;" title="Delete"
-                                onclick="handleDeleteFile('${file.id}')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+        if (result.status !== 'success') {
+            tbody.innerHTML = `<tr><td colspan="5" style="color:#e74c3c;padding:20px;">API error: ${result.message}</td></tr>`;
+            return;
         }
+
+        const files = result.data;
+
+        if (!files || files.length === 0) {
+            if (emptyState) emptyState.style.display = 'block';
+            return;
+        }
+
+        // Step 8: render each file row
+        files.forEach(file => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+
+            const classes = getFileIconClass(file.type || '').split(' ');
+            const bgClass = classes[0] || 'icon-bg-pdf';
+            const iClass = classes[1] || 'fa-file';
+
+            tr.innerHTML = `
+                <td>
+                    <div class="file-name-cell">
+                        <div class="file-icon ${bgClass}">
+                            <i class="fa-solid ${iClass}"></i>
+                        </div>
+                        <span>${file.name || 'Unnamed'}</span>
+                    </div>
+                </td>
+                <td>${file.type || '-'}</td>
+                <td>${file.size || '-'}</td>
+                <td>${file.date_modified || '-'}</td>
+                <td>
+                    <div class="file-actions">
+                        <button class="action-btn" style="color:#27ae60;" title="View"
+                            onclick="handleViewAppFile('${file.id}')">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button class="action-btn" style="color:#3498db;" title="Download"
+                            onclick="handleDownloadFile('${file.id}')">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                        <button class="action-btn" style="color:#e74c3c;" title="Delete"
+                            onclick="handleDeleteFile('${file.id}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            // Row click to load access control
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('.action-btn')) return;
+                currentFileId = file.id;
+                fetchAccessControl(file.id);
+            });
+
+            tbody.appendChild(tr);
+        });
+
     } catch (error) {
-        console.error('Error fetching files:', error);
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#e74c3c;">Failed to load files.</td></tr>`;
+        console.error('[fetchFiles] Exception:', error);
+        tbody.innerHTML = `<tr><td colspan="5" style="color:#e74c3c;padding:20px;">
+            Error loading files: ${error.message}
+        </td></tr>`;
     }
 }
 
@@ -868,9 +941,20 @@ async function handleRequestAction(reqId, action) {
     });
 }
 
-function handleDownloadFile(fileId) {
+function handleViewAppFile(fileId) {
+    // Opens the file inline in a new tab (PDFs, images, videos will render; others will download)
     const uid = getActiveUid();
     window.open(`${API_BASE}/files/download/${fileId}?uid=${uid}`, '_blank');
+}
+
+function handleDownloadFile(fileId) {
+    const uid = getActiveUid();
+    const a = document.createElement('a');
+    a.href = `${API_BASE}/files/download/${fileId}?uid=${uid}`;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function handleDeleteFile(fileId) {

@@ -65,7 +65,6 @@
                 </div>
                 
                 <div class="header-actions">
-                    <div class="notif-badge"><i class="fa-solid fa-bell"></i></div>
                     
                     <div class="profile-pill" id="profile-dropdown-btn">
                         <div class="avatar-sm" id="nav-avatar"><i class="fa-solid fa-user"></i></div>
@@ -155,6 +154,41 @@
                             </div>
                         </div>
 
+                        <!-- User: Dashboard Stats View (New) -->
+                        <div id="user-home-view" style="display:none;">
+                            <div class="admin-view-header" style="margin-bottom: 25px;">
+                                <h2>My Storage Overview</h2>
+                                <p>Quick insights into your CloudHub usage and quota.</p>
+                            </div>
+                            
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:30px; margin-bottom:40px;">
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon" style="background:rgba(139, 92, 246, 0.1); color:var(--primary);"><i class="fa-solid fa-folder-tree"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Total Folders</span>
+                                        <strong id="user-total-folders" class="stat-value">0</strong>
+                                        <span class="stat-trend"><i class="fa-solid fa-layer-group"></i> Active Directories</span>
+                                    </div>
+                                </div>
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon" style="background:rgba(6, 182, 212, 0.1); color:var(--secondary);"><i class="fa-solid fa-file"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Total Files</span>
+                                        <strong id="user-total-files" class="stat-value">0</strong>
+                                        <span class="stat-trend"><i class="fa-solid fa-file-contract"></i> Stored Assets</span>
+                                    </div>
+                                </div>
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon" style="background:rgba(16, 185, 129, 0.1); color:var(--success);"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Storage Used</span>
+                                        <strong id="user-total-used" class="stat-value">0 MB</strong>
+                                        <span class="stat-trend" id="user-used-percent">0% of 1 GB Quota</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Admin: Dashboard Stats View (New) -->
                         <div id="admin-home-view" style="display:none;">
                             <div class="admin-view-header">
@@ -198,6 +232,7 @@
                                          <th>Name</th>
                                          <th>Type</th>
                                          <th>Size</th>
+                                         <th>Date</th>
                                          <th>Actions</th>
                                      </tr>
                                  </thead>

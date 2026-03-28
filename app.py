@@ -115,7 +115,15 @@ def get_user_profile():
         total = 20.0 # Standard Platform Limit (20 GB as per request)
     else:
         used  = float(user['storage_used_gb'])
-        total = float(user['storage_total_gb'])
+        total = 1.0 # 1GB limit for a user
+        
+        cursor.execute("SELECT COUNT(*) as fc FROM folders WHERE created_by = %s", (user['user_id'],))
+        fc_data = cursor.fetchone()
+        folder_count = fc_data['fc'] if fc_data else 0
+
+        cursor.execute("SELECT COUNT(*) as fic FROM files WHERE owner_id = %s", (user['user_id'],))
+        fic_data = cursor.fetchone()
+        file_count = fic_data['fic'] if fic_data else 0
 
     cursor.close()
     conn.close()
@@ -128,6 +136,8 @@ def get_user_profile():
             "email": user['email'],
             "role":  user['role'],
             "user_count": user_count,
+            "folder_count": folder_count if user['role'] == 'user' else 0,
+            "file_count": file_count if user['role'] == 'user' else 0,
             "avatar_url": "",
             "storage": {
                 "used_gb":    used,
@@ -308,10 +318,24 @@ def upload_file():
     if not conn:
         return jsonify({"status": "error", "message": "DB Error"}), 500
 
+    size_gb = size_bytes / (1024 * 1024 * 1024)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
+    cursor.execute("SELECT role, storage_used_gb FROM users WHERE user_id = %s", (user_id,))
+    u = cursor.fetchone()
+    if u:
+        limit_gb = 20.0 if u['role'] == 'admin' else 1.0
+        if float(u['storage_used_gb'] or 0) + size_gb > limit_gb:
+            cursor.close()
+            conn.close()
+            return jsonify({"status": "error", "message": f"Upload failed. Exceeds your {limit_gb} GB storage quota."}), 403
+
     # Read the file bytes before saving - needed for DB BLOB storage
     file_bytes = file.read()
     file.seek(0)
 
+    # Switch back to standard cursor for inserts
+    cursor.close()
     cursor = conn.cursor()
     cursor.execute(
         "INSERT INTO files (filename, filetype, filesize, icon, folder_id, owner_id, file_data) "
