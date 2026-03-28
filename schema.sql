@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS folders (
     folder_id    INT AUTO_INCREMENT PRIMARY KEY,
     foldername   VARCHAR(100) NOT NULL,
     created_by   INT NOT NULL,
-    color        VARCHAR(20)  DEFAULT 'yellow',
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE
 );

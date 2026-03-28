@@ -20,10 +20,14 @@
             
             <ul class="side-nav">
                 <li id="nav-home" class="active"><a href="#" onclick="changeView('home')"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
-                <li id="nav-folders"><a href="#" onclick="changeView('folders')"><i class="fa-solid fa-folder-tree"></i> <span>Folders</span></a></li>
+                <li id="nav-folders" class="user-only"><a href="#" onclick="changeView('folders')"><i class="fa-solid fa-folder-tree"></i> <span>Folders</span></a></li>
+                
+                <!-- Admin Only Nav Items -->
+                <li id="nav-requests" class="admin-only" style="display:none;"><a href="#" onclick="changeView('requests')"><i class="fa-solid fa-user-check"></i> <span>Requests <em id="requests-badge-nav" class="badge">0</em></span></a></li>
+                <li id="nav-users" class="admin-only" style="display:none;"><a href="#" onclick="changeView('users')"><i class="fa-solid fa-users-gear"></i> <span>User Directory</span></a></li>
+                
                 <li id="nav-recent"><a href="#" onclick="changeView('recent')"><i class="fa-solid fa-clock-rotate-left"></i> <span>Recent</span></a></li>
-                <li id="nav-shared"><a href="#" onclick="changeView('shared')"><i class="fa-solid fa-share-nodes"></i> <span>Shared</span></a></li>
-                <li id="nav-trash"><a href="#" onclick="changeView('trash')"><i class="fa-solid fa-trash-can"></i> <span>Trash</span></a></li>
+                <li id="nav-trash" class="user-only"><a href="#" onclick="changeView('trash')"><i class="fa-solid fa-trash-can"></i> <span>Trash</span></a></li>
             </ul>
 
             <!-- ACTIVITY HISTORY SIDEBAR -->
@@ -112,6 +116,80 @@
                         <!-- Grid -->
                         <div id="folder-grid" class="modern-grid"></div>
 
+                        <!-- Admin: Pending Requests View -->
+                        <div id="admin-requests-view" style="display:none;">
+                            <div class="admin-view-header">
+                                <h2>Pending Approvals</h2>
+                                <p>Review and validate new access requests based on system criteria.</p>
+                            </div>
+                            <div id="requests-list" class="admin-requests-grid">
+                                <!-- Requests populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Admin: User Directory View -->
+                        <div id="admin-users-view" style="display:none;">
+                            <div id="admin-user-selection">
+                                <div class="admin-view-header">
+                                    <h2>User Directory</h2>
+                                    <p>Select a user account to audit their stored assets and activity.</p>
+                                </div>
+                                <div id="admin-user-grid" class="modern-grid"></div>
+                            </div>
+                            
+                            <!-- Detailed User Audit View -->
+                            <div id="admin-user-audit" style="display:none;">
+                                <div class="audit-header">
+                                    <button onclick="showAdminUserGrid()" class="btn-back"><i class="fa-solid fa-chevron-left"></i> Back to Directory</button>
+                                    <h3 id="admin-current-target-name">...</h3>
+                                </div>
+                                <div class="audit-body">
+                                    <div class="audit-stats">
+                                        <div class="mini-card"><i class="fa-solid fa-folder"></i> <span id="audit-folder-count">0</span> Folders</div>
+                                        <div class="mini-card"><i class="fa-solid fa-file"></i> <span id="audit-file-count">0</span> Files</div>
+                                    </div>
+                                    <div id="admin-file-list" class="audit-file-grid">
+                                        <!-- User files populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin: Dashboard Stats View (New) -->
+                        <div id="admin-home-view" style="display:none;">
+                            <div class="admin-view-header">
+                                <h2>Global Platform Overview</h2>
+                                <p>Aggregate metrics and system-wide resource distribution.</p>
+                            </div>
+                            
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:30px; margin-bottom:40px;">
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon" style="background:rgba(139, 92, 246, 0.1); color:var(--primary);"><i class="fa-solid fa-users"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Total Users</span>
+                                        <strong id="admin-total-users" class="stat-value">0</strong>
+                                        <span class="stat-trend"><i class="fa-solid fa-arrow-up"></i> Active Node Count</span>
+                                    </div>
+                                </div>
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon" style="background:rgba(6, 182, 212, 0.1); color:var(--secondary);"><i class="fa-solid fa-database"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Platform Capacity</span>
+                                        <strong id="admin-total-limit" class="stat-value">0 GB</strong>
+                                        <span class="stat-trend">Allocated Quota</span>
+                                    </div>
+                                </div>
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon" style="background:rgba(16, 185, 129, 0.1); color:var(--success);"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Storage Accessed</span>
+                                        <strong id="admin-total-used" class="stat-value">0 MB</strong>
+                                        <span class="stat-trend" id="admin-used-percent">0% Utilization</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Table -->
                         <div id="file-panel" class="file-table-container" style="display:none;">
                              <table class="data-table">
@@ -135,21 +213,10 @@
 
                     <!-- Right Panel Activities -->
                     <aside class="activity-panel">
-                        <!-- Admin Global Only -->
-                        <div id="admin-file-manager-panel" class="admin-card" style="display:none;">
-                            <h3><i class="fa-solid fa-users-viewfinder"></i> User Directory</h3>
-                            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:15px;">Double-click a user to explore their folders and files.</p>
-                            <div id="admin-user-grid" class="modern-grid" style="gap:15px;"></div>
-                            <div id="admin-secondary-actions" style="margin-top:20px; border-top:1px solid var(--border); padding-top:10px; display:none;">
-                                <button class="btn btn-sm" onclick="showAdminUserGrid()"><i class="fa-solid fa-chevron-left"></i> All Users</button>
-                                <h4 id="admin-current-target-name" style="margin:10px 0; color:var(--primary);"></h4>
-                                <div id="admin-file-list" class="mini-files"></div>
-                            </div>
-                        </div>
 
 
 
-                        <div class="access-card">
+                        <div class="access-card user-only">
                             <h3><i class="fa-solid fa-lock"></i> Share Access</h3>
                             <div id="access-control-list">
                                 <p class="muted">Select a file to manage shared users</p>

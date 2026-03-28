@@ -20,17 +20,35 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     document.body.classList.add(`role-${role}`);
+    
+    // UI Role Distinction
+    const roleLabel = document.getElementById('nav-role');
+    if (roleLabel) roleLabel.textContent = role === 'admin' ? 'Master Administrator' : 'Cloud User';
+
+    if (role === 'admin') {
+        const adminEls = document.querySelectorAll('.admin-only');
+        adminEls.forEach(el => {
+            if (el.tagName === 'LI') el.style.display = 'list-item';
+            else el.style.display = 'block';
+        });
+        
+        // Admins start on the Requests page if there are any
+        fetchAdminRequests().then(() => {
+            const badge = document.getElementById('requests-badge-nav');
+            if (badge && parseInt(badge.textContent) > 0) {
+                changeView('requests');
+            }
+        });
+    }
 
     fetchUserData();
     checkApprovalStatus();
     fetchFolders();
-    // fetchFiles() is now called only when a folder is opened
     fetchAccessControl();
     fetchActivityLogs();
-    fetchAdminRequests();
+    
     if (role === 'admin') {
         fetchAdminUsersList();
-        fetchAdminFiles();
     }
     setupProfileDropdown();
 });
@@ -41,25 +59,63 @@ function changeView(view) {
     const activeLi = document.getElementById(`nav-${view}`);
     if (activeLi) activeLi.classList.add('active');
 
-    const grid = document.getElementById('folder-grid');
-    grid.innerHTML = ''; // Start clean
+    // Hide all main containers
+    const containers = ['folder-grid', 'file-panel', 'admin-requests-view', 'admin-users-view', 'admin-home-view', 'folder-breadcrumb'];
+    containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    const actionArea = document.getElementById('action-area');
+    const welcome = document.getElementById('welcome-message');
+    const banner = document.querySelector('.banner-section');
+    const role = localStorage.getItem('cloudhub_role');
 
     // 2. Logic for each view
-    if (view === 'home' || view === 'folders') {
-        closeFolder(); // Switch to grid view
-        document.getElementById('welcome-message').textContent = view === 'home' ? 'Vault Access' : 'Cloud Folders';
-        document.getElementById('action-area').style.display = 'flex';
+    const isAdminView = ['home', 'requests', 'users'].includes(view) && role === 'admin';
+    if (banner) {
+        if (isAdminView) banner.classList.add('admin-banner');
+        else banner.classList.remove('admin-banner');
+    }
+
+    if (view === 'home') {
+        if (role === 'admin') {
+            welcome.textContent = 'Admin Command Center';
+            if (actionArea) actionArea.style.display = 'none';
+            document.getElementById('admin-home-view').style.display = 'block';
+        } else {
+            closeFolder();
+            welcome.textContent = 'Vault Access';
+            if (actionArea) actionArea.style.display = 'flex';
+            document.getElementById('folder-grid').style.display = 'grid';
+            fetchFolders(true);
+        }
+    } else if (view === 'folders') {
+        closeFolder();
+        welcome.textContent = 'Cloud Folders';
+        if (actionArea) actionArea.style.display = 'flex';
+        document.getElementById('folder-grid').style.display = 'grid';
         fetchFolders(true);
+    } else if (view === 'requests') {
+        welcome.textContent = 'Admin: User Requests';
+        if (actionArea) actionArea.style.display = 'none';
+        document.getElementById('admin-requests-view').style.display = 'block';
+        fetchAdminRequests();
+    } else if (view === 'users') {
+        welcome.textContent = 'Admin: User Directory';
+        if (actionArea) actionArea.style.display = 'none';
+        document.getElementById('admin-users-view').style.display = 'block';
+        showAdminUserGrid();
     } else if (view === 'recent') {
-        grid.innerHTML = '';
         document.getElementById('file-panel').style.display = 'none';
-        document.getElementById('folder-breadcrumb').style.display = 'none';
-        document.getElementById('welcome-message').textContent = 'Recent Activity (Last 24h)';
-        document.getElementById('action-area').style.display = 'none'; // No context to upload here
-        
+        welcome.textContent = 'Recent Activity (Last 24h)';
+        if (actionArea) actionArea.style.display = 'none';
+        document.getElementById('folder-grid').style.display = 'grid';
         fetchRecentOnlyGrid();
     } else {
-        document.getElementById('action-area').style.display = 'none';
+        if (actionArea) actionArea.style.display = 'none';
+        const grid = document.getElementById('folder-grid');
+        grid.style.display = 'grid';
         grid.innerHTML = `
             <div class="placeholder-view" style="grid-column: 1 / -1; text-align:center; padding: 60px 0;">
                 <i class="fa-solid fa-hourglass-half" style="font-size: 4rem; color: var(--border); margin-bottom: 20px; display:block;"></i>
@@ -67,11 +123,8 @@ function changeView(view) {
                 <button class="btn btn-accent" style="margin: 20px auto;" onclick="changeView('home')">Return Home</button>
             </div>
         `;
-        document.getElementById('file-panel').style.display = 'none';
-        document.getElementById('folder-breadcrumb').style.display = 'none';
-        
-        const viewNames = { 'recent':'Recent Files', 'shared':'Shared with Me', 'trash':'Trash Bin' };
-        document.getElementById('welcome-message').textContent = viewNames[view] || 'Vault';
+        const viewNames = { 'shared':'Shared with Me', 'trash':'Trash Bin' };
+        welcome.textContent = viewNames[view] || 'Vault';
     }
 }
 
@@ -260,6 +313,8 @@ async function fetchUserData() {
             // Storage updates
             let usedGB = Number(user.storage.used_gb);
             let totalGB = Number(user.storage.total_gb);
+            const is_admin = user.role === 'admin';
+            
             let usedStr;
             if (usedGB === 0) {
                 usedStr = "0 MB";
@@ -270,7 +325,23 @@ async function fetchUserData() {
             } else {
                 usedStr = usedGB.toFixed(2) + " GB";
             }
-            document.getElementById('sidebar-storage-text').textContent = `Storage Used: ${usedStr} out of ${totalGB} GB`;
+
+            const storageLabel = document.querySelector('.storage-labels span:first-child');
+            if (storageLabel) {
+                storageLabel.textContent = is_admin ? 'Global Capacity' : 'Used Storage';
+            }
+
+            const storageText = document.getElementById('sidebar-storage-text');
+            if (storageText) {
+                storageText.textContent = `${usedStr} / ${totalGB} GB`;
+                storageText.title = is_admin ? 'Sum of all user storage' : 'Your personal storage';
+            }
+
+            // Hide Upgrade for Admin
+            const upgradeBtn = document.querySelector('.btn-upgrade');
+            if (upgradeBtn) {
+                upgradeBtn.style.display = is_admin ? 'none' : 'block';
+            }
 
             // Ensure even tiny sizes (like MBs out of 20GB) show a visual slice of green!
             let progressPercent = Number(user.storage.percentage) || 0;
@@ -278,9 +349,22 @@ async function fetchUserData() {
                 progressPercent = 1.5; // Hardcode a visual baseline of 1.5% pixels wide.
             }
 
+            if (is_admin) {
+                const totalUsers = document.getElementById('admin-total-users');
+                const totalLimit = document.getElementById('admin-total-limit');
+                const totalUsed = document.getElementById('admin-total-used');
+                const usedPerc = document.getElementById('admin-used-percent');
+                
+                if (totalUsers) totalUsers.textContent = user.user_count || 0;
+                if (totalLimit) totalLimit.textContent = `${totalGB} GB`;
+                if (totalUsed) totalUsed.textContent = usedStr;
+                if (usedPerc) usedPerc.textContent = `${Number(user.storage.percentage).toFixed(1)}% Utilization`;
+            }
+
             // Set progress bar with small delay for animation
             setTimeout(() => {
-                document.getElementById('sidebar-storage-fill').style.width = `${progressPercent}%`;
+                const fill = document.getElementById('sidebar-storage-fill');
+                if (fill) fill.style.width = `${progressPercent}%`;
             }, 300);
         }
     } catch (error) {
@@ -548,12 +632,7 @@ async function fetchActivityLogs() {
 
 async function fetchAdminRequests() {
     const role = localStorage.getItem('cloudhub_role');
-    const panel = document.getElementById('admin-requests-panel');
-    if (role !== 'admin') {
-        if (panel) panel.style.display = 'none';
-        return;
-    }
-    panel.style.display = 'block';
+    if (role !== 'admin') return;
 
     try {
         const res = await authFetch(`${API_BASE}/admin/requests?t=${Date.now()}`);
@@ -562,110 +641,78 @@ async function fetchAdminRequests() {
         if (result.status === 'success') {
             const requests = result.data;
             const container = document.getElementById('requests-list');
-            const badge = document.getElementById('requests-badge');
-            badge.textContent = requests.length;
+            const badgeNav = document.getElementById('requests-badge-nav');
+            
+            if (badgeNav) {
+                badgeNav.textContent = requests.length;
+                badgeNav.style.display = requests.length > 0 ? 'inline-block' : 'none';
+            }
+            if (!container) return;
+            
             container.innerHTML = '';
 
             if (requests.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align:center;padding:24px 16px;opacity:0.65;">
-                        <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
-                        All caught up — no pending requests.
+                    <div style="grid-column: 1 / -1; text-align:center; padding: 60px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed var(--border);">
+                        <i class="fa-solid fa-circle-check" style="font-size:3rem; color:var(--success); margin-bottom:15px; opacity:0.5;"></i>
+                        <h3>All requests handled</h3>
+                        <p style="color:var(--text-muted);">No new access requests requiring approval at this time.</p>
                     </div>`;
                 return;
             }
 
             requests.forEach(req => {
-                /* ---- Criteria evaluation logic ---- */
                 const rolePassed   = req.user_role === 'user';
                 const loginsPassed = req.recent_logins <= 5;
-                const loginsFailed = !loginsPassed;
-                const reasonPassed = req.reason && req.reason.length >= 15;
-                const countPassed  = req.number_of_requests <= 3;        // not spamming
-                const countWarned  = req.number_of_requests > 3;
+                const reasonPassed = req.reason && req.reason.length >= 10;
+                const countPassed  = req.number_of_requests <= 3;
 
-                const chip = (ok, warn, label, detail) => {
-                    const color = ok && !warn
-                        ? 'rgba(46,204,113,0.18)'   // green
-                        : warn
-                            ? 'rgba(243,156,18,0.2)'  // orange
-                            : 'rgba(231,76,60,0.2)';  // red
-                    const border = ok && !warn
-                        ? 'rgba(46,204,113,0.55)'
-                        : warn
-                            ? 'rgba(243,156,18,0.55)'
-                            : 'rgba(231,76,60,0.55)';
-                    const icon = ok && !warn ? 'fa-check-circle' : warn ? 'fa-triangle-exclamation' : 'fa-times-circle';
-                    const iconColor = ok && !warn ? '#2ecc71' : warn ? '#f39c12' : '#e74c3c';
+                const chip = (ok, label, detail) => {
+                    const color = ok ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)';
+                    const border = ok ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+                    const icon = ok ? 'fa-check' : 'fa-xmark';
+                    const iconColor = ok ? 'var(--success)' : 'var(--accent)';
                     return `
-                        <div style="background:${color};border:1px solid ${border};border-radius:8px;padding:8px 10px;font-size:0.78rem;">
-                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-                                <i class="fa-solid ${icon}" style="color:${iconColor};"></i>
-                                <span style="font-weight:600;">${label}</span>
+                        <div style="background:${color}; border:1px solid ${border}; border-radius:8px; padding:8px 12px; font-size:0.75rem;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid ${icon}" style="color:${iconColor}"></i>
+                                <strong>${label}</strong>
                             </div>
-                            <div style="opacity:0.8;padding-left:20px;">${detail}</div>
+                            <div style="margin-top:2px; opacity:0.75;">${detail}</div>
                         </div>`;
                 };
 
-                const roleChip   = chip(rolePassed,  false,     'User Role',         rolePassed ? 'Regular user ✓' : 'Unknown role');
-                const loginsChip = chip(loginsPassed, false,    'Recent Logins',     loginsPassed ? `${req.recent_logins} in 24h ✓` : `${req.recent_logins} in 24h (>5 limit)`);
-                const reasonChip = chip(reasonPassed, false,    'Request Reason',    reasonPassed ? 'Reason provided ✓' : 'Reason too short!');
-                const countChip  = chip(!countWarned, countWarned, 'Request Count',  `${req.number_of_requests} total request(s)`);
-
-                /* ---- Overall recommendation ---- */
-                const allGood = rolePassed && loginsPassed && reasonPassed && !countWarned;
-                const recoBg     = allGood ? 'rgba(46,204,113,0.12)' : 'rgba(243,156,18,0.12)';
-                const recoBorder = allGood ? 'rgba(46,204,113,0.4)'  : 'rgba(243,156,18,0.4)';
-                const recoIcon   = allGood ? '✅' : '⚠️';
-                const recoText   = allGood ? 'Criteria met — recommended to <strong>Accept</strong>' : 'Some criteria flagged — review carefully';
-
                 const div = document.createElement('div');
-                div.className = 'request-item';
-                div.style.cssText = 'margin-bottom:18px;padding:16px;background:rgba(255,255,255,0.05);border-radius:14px;border:1px solid var(--glass-border);';
+                div.className = 'admin-card';
+                div.style.padding = '24px';
 
                 div.innerHTML = `
-                    <!-- Header row -->
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-                        <div>
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <div style="width:34px;height:34px;border-radius:50%;background:rgba(101,173,136,0.3);border:2px solid rgba(101,173,136,0.5);display:flex;align-items:center;justify-content:center;">
-                                    <i class="fa-solid fa-user" style="font-size:0.9rem;color:#bde0d0;"></i>
-                                </div>
-                                <div>
-                                    <strong style="font-size:1rem;">${req.user_name}</strong>
-                                    <span style="margin-left:6px;font-size:0.78rem;opacity:0.65;background:rgba(255,255,255,0.1);padding:2px 7px;border-radius:20px;">${req.user_role}</span>
-                                </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="avatar-sm"><i class="fa-solid fa-user"></i></div>
+                            <div>
+                                <h4 style="margin:0;">${req.user_name}</h4>
+                                <small style="color:var(--text-muted);">${req.user_role}</small>
                             </div>
                         </div>
-                        <span style="font-size:0.76rem;background:rgba(0,0,0,0.25);padding:3px 9px;border-radius:12px;white-space:nowrap;">${req.date_requested}</span>
+                        <small style="color:var(--text-muted);">${req.date_requested}</small>
                     </div>
 
-                    <!-- Request type + reason -->
-                    <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
-                        <div style="font-weight:600;font-size:0.9rem;color:#65ad88;margin-bottom:4px;">
-                            <i class="fa-solid fa-tag" style="margin-right:6px;"></i>${req.request_type}
-                        </div>
-                        <div style="font-size:0.83rem;opacity:0.82;font-style:italic;">"${req.reason}"</div>
+                    <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:12px; margin-bottom:15px; border-left:3px solid var(--primary);">
+                        <div style="font-weight:700; font-size:0.8rem; color:var(--primary); margin-bottom:4px;">REASON GIVEN:</div>
+                        <div style="font-size:0.85rem; line-height:1.4;">"${req.reason}"</div>
                     </div>
 
-                    <!-- Criteria grid -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                        ${roleChip}${loginsChip}${reasonChip}${countChip}
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+                        ${chip(rolePassed, 'Role', req.user_role)}
+                        ${chip(loginsPassed, 'Activity', req.recent_logins + ' logins')}
+                        ${chip(reasonPassed, 'Length', 'Valid context')}
+                        ${chip(countPassed, 'Attempts', req.number_of_requests + ' request')}
                     </div>
 
-                    <!-- Recommendation banner -->
-                    <div style="background:${recoBg};border:1px solid ${recoBorder};border-radius:8px;padding:8px 12px;font-size:0.82rem;margin-bottom:12px;">
-                        ${recoIcon} ${recoText}
-                    </div>
-
-                    <!-- Action buttons -->
-                    <div style="display:flex;gap:12px;">
-                        <button id="approve-btn-${req.id}" class="btn btn-accept" ${!allGood ? 'disabled' : ''} onclick="handleRequestAction('${req.id}', 'approve')" style="flex:1;">
-                            <i class="fa-solid ${allGood ? 'fa-check' : 'fa-lock'}"></i> Accept
-                        </button>
-                        <button id="reject-btn-${req.id}" class="btn btn-reject" onclick="handleRequestAction('${req.id}', 'reject')" style="flex:1;">
-                            <i class="fa-solid fa-xmark"></i> Reject
-                        </button>
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn btn-accept" style="flex:1" onclick="handleRequestAction('${req.id}', 'approve')"><i class="fa-solid fa-check"></i> Accept</button>
+                        <button class="btn btn-reject" style="flex:1" onclick="handleRequestAction('${req.id}', 'reject')"><i class="fa-solid fa-xmark"></i> Reject</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -673,34 +720,6 @@ async function fetchAdminRequests() {
         }
     } catch (error) {
         console.error('Error fetching requests:', error);
-        document.getElementById('requests-list').innerHTML = '<div style="opacity:0.65;text-align:center;padding:16px;">Failed to load requests. Is Flask running?</div>';
-    }
-}
-
-// ─── ADMIN GLOBAL FILE MANAGER ──────────────────────────────────────────────
-
-async function fetchAdminUsersList() {
-    const panel = document.getElementById('admin-file-manager-panel');
-    if (panel) panel.style.display = 'block';
-
-    try {
-        const res = await authFetch(`${API_BASE}/admin/users-list`);
-        const result = await res.json();
-        if (result.status !== 'success') return;
-
-        const select = document.getElementById('admin-user-filter');
-        if (!select) return;
-
-        // Keep the "All Users" option, then add each user
-        select.innerHTML = '<option value="all">All Users</option>';
-        result.data.forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = u.id;
-            opt.textContent = `${u.name}  (${u.file_count} file${u.file_count !== 1 ? 's' : ''})`;
-            select.appendChild(opt);
-        });
-    } catch (e) {
-        console.error('fetchAdminUsersList error', e);
     }
 }
 
@@ -710,7 +729,7 @@ async function fetchAdminUsersList() {
     const grid = document.getElementById('admin-user-grid');
     if (!grid) return;
     
-    grid.innerHTML = '<div style="color:var(--text-muted); grid-column:1/-1;">Loading Users...</div>';
+    grid.innerHTML = '<div style="color:var(--text-muted); grid-column:1/-1;">Loading secure user index...</div>';
 
     try {
         const res = await authFetch(`${API_BASE}/admin/users-list`);
@@ -721,39 +740,47 @@ async function fetchAdminUsersList() {
         result.data.forEach(user => {
             const card = document.createElement('div');
             card.className = 'folder-card';
-            card.style.cssText = 'padding:15px; border-radius:12px; transition:0.3s;';
+            card.style.cssText = 'padding:24px; border-radius:16px; border:1px solid var(--border); transition:0.3s;';
             card.innerHTML = `
-                <div style="font-size:2rem; color:var(--primary); margin-bottom:8px; opacity:0.8;"><i class="fa-solid fa-folder-user"></i></div>
-                <div style="font-weight:700; font-size:0.85rem; color:white;">${user.name}</div>
-                <div style="font-size:0.65rem; color:var(--text-muted);">${user.file_count} items</div>
+                <div style="font-size:2.4rem; color:var(--primary); margin-bottom:12px; opacity:0.8;"><i class="fa-solid fa-user-gear"></i></div>
+                <div style="font-weight:700; font-size:1rem; color:white; margin-bottom:4px;">${user.name}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">${user.file_count} Cloud Assets</div>
+                <button class="btn btn-sm btn-accent" style="width:100%; margin-top:15px; font-size:0.7rem;">Explore Vault</button>
             `;
-            card.onclick = () => exploreAdminUser(user.id, user.name);
+            card.onclick = () => exploreAdminUser(user.id, user.name, user.file_count);
             grid.appendChild(card);
         });
-    } catch (e) { console.error('Admin user list fetch failed', e); }
+    } catch (e) { 
+        console.error('Admin user list fetch failed', e);
+        grid.innerHTML = '<div style="color:var(--accent);">Database communication error.</div>';
+    }
 }
 
-function exploreAdminUser(uid, name) {
+function exploreAdminUser(uid, name, fileCount) {
     currentAdminTargetId = uid;
-    document.getElementById('admin-user-grid').style.display = 'none';
-    const secondary = document.getElementById('admin-secondary-actions');
-    secondary.style.display = 'block';
-    document.getElementById('admin-current-target-name').textContent = `Exploring: ${name}`;
-    fetchAdminFiles(); // Re-fetch only this user's files
+    document.getElementById('admin-user-selection').style.display = 'none';
+    document.getElementById('admin-user-audit').style.display = 'block';
+    
+    document.getElementById('admin-current-target-name').textContent = `Auditing: ${name}`;
+    document.getElementById('audit-file-count').textContent = fileCount;
+    
+    // We don't have a direct folder count in users-list, but we can fetch files to find out
+    fetchAdminFiles(); 
 }
 
 function showAdminUserGrid() {
     currentAdminTargetId = 'all';
-    document.getElementById('admin-user-grid').style.display = 'grid';
-    document.getElementById('admin-secondary-actions').style.display = 'none';
+    document.getElementById('admin-user-selection').style.display = 'block';
+    document.getElementById('admin-user-audit').style.display = 'none';
+    fetchAdminUsersList(); // refresh
 }
 
 async function fetchAdminFiles() {
     const ownerId = currentAdminTargetId;
-    const tbody   = document.getElementById('admin-file-list');
-    if (!tbody) return;
+    const container = document.getElementById('admin-file-list');
+    if (!container) return;
 
-    tbody.innerHTML = '<div style="color:var(--text-muted); padding:20px;">Fetching...</div>';
+    container.innerHTML = '<div style="grid-column:1/-1; color:var(--text-muted); padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Indexing assets...</div>';
 
     try {
         const params = new URLSearchParams({ owner_id: ownerId });
@@ -762,26 +789,35 @@ async function fetchAdminFiles() {
         if (result.status !== 'success') return;
 
         const files = result.data;
-        tbody.innerHTML = '';
+        container.innerHTML = '';
 
         if (files.length === 0) {
-            tbody.innerHTML = '<div style="padding:20px; color:var(--text-muted);">No files found for this user.</div>';
+            container.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--text-muted); background:rgba(0,0,0,0.1); border-radius:12px;">No discoverable files for this account.</div>';
             return;
         }
 
         files.forEach(file => {
-            const tr = document.createElement('div');
-            tr.className = 'mini-file-item';
-            tr.innerHTML = `
-                <i class="fa-solid ${getFileIconClass(file.type).split(' ')[1]}"></i>
-                <span>${file.name}</span>
-                <button onclick="handleDownloadFile('${file.id}')"><i class="fa-solid fa-download"></i></button>
+            const card = document.createElement('div');
+            card.className = 'audit-file-card';
+            const iconClass = getFileIconClass(file.type).split(' ')[1];
+            
+            card.innerHTML = `
+                <div class="audit-file-icon">
+                    <i class="fa-solid ${iconClass}"></i>
+                </div>
+                <div class="audit-file-info">
+                    <span class="name">${file.name}</span>
+                    <span class="meta">${file.type} • ${file.size}</span>
+                </div>
+                <button class="btn-icon-xs" title="Download Audit Copy" onclick="handleDownloadFile('${file.id}')">
+                    <i class="fa-solid fa-download"></i>
+                </button>
             `;
-            tbody.appendChild(tr);
+            container.appendChild(card);
         });
     } catch (e) {
         console.error('Admin file list error', e);
-        tbody.innerHTML = '<div style="color:var(--primary);">Server error</div>';
+        container.innerHTML = '<div style="color:var(--accent);">Asset retrieval failure</div>';
     }
 }
 

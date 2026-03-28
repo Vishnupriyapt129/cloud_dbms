@@ -91,32 +91,51 @@ def get_user_profile():
 
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     cursor.execute(
-        "SELECT user_id, username, email, storage_used_gb, storage_total_gb "
+        "SELECT user_id, username, email, role, storage_used_gb, storage_total_gb "
         "FROM users WHERE user_id = %s",
         (user_id,)
     )
     user = cursor.fetchone()
+    
+    if not user:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    # If Admin, fetch GLOBAL stats (System-wide 20 GB limit)
+    user_count = None
+    if user['role'] == 'admin':
+        cursor.execute("SELECT COUNT(*) as total_users FROM users WHERE role = 'user'")
+        uc = cursor.fetchone()
+        user_count = uc['total_users'] if uc else 0
+
+        cursor.execute("SELECT SUM(storage_used_gb) as total_used FROM users")
+        global_stats = cursor.fetchone()
+        used = float(global_stats['total_used'] or 0)
+        total = 20.0 # Standard Platform Limit (20 GB as per request)
+    else:
+        used  = float(user['storage_used_gb'])
+        total = float(user['storage_total_gb'])
+
     cursor.close()
     conn.close()
 
-    if user:
-        used  = float(user['storage_used_gb'])
-        total = float(user['storage_total_gb'])
-        return jsonify({
-            "status": "success",
-            "data": {
-                "id":   str(user['user_id']),
-                "name": user['username'],
-                "email": user['email'],
-                "avatar_url": "",
-                "storage": {
-                    "used_gb":    used,
-                    "total_gb":   total,
-                    "percentage": (used / total) * 100 if total else 0
-                }
+    return jsonify({
+        "status": "success",
+        "data": {
+            "id":   str(user['user_id']),
+            "name": user['username'],
+            "email": user['email'],
+            "role":  user['role'],
+            "user_count": user_count,
+            "avatar_url": "",
+            "storage": {
+                "used_gb":    used,
+                "total_gb":   total,
+                "percentage": (used / total) * 100 if total else 0
             }
-        }), 200
-    return jsonify({"status": "error", "message": "User not found"}), 404
+        }
+    }), 200
 
 # ---------------------------------------------------------
 # FOLDERS  (uses: folders.folder_id, foldername, created_by)
@@ -678,8 +697,8 @@ def user_signup():
             lname = name_parts[-1] if len(name_parts) > 1 else 'User'
             username = data['email'].split('@')[0]
             cursor.execute(
-                "INSERT INTO users (username, fname, lname, email, password_hash, role) "
-                "VALUES (%s, %s, %s, %s, %s, 'user')",
+                "INSERT INTO users (username, fname, lname, email, password_hash, role, storage_total_gb) "
+                "VALUES (%s, %s, %s, %s, %s, 'user', 1.0)",
                 (username, fname, lname, data['email'], data.get('password', 'dummy_pwd'))
             )
             user_id = cursor.lastrowid
